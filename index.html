@@ -333,10 +333,17 @@
             position: relative;
             word-wrap: break-word;
             transition: transform 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .message:hover {
             transform: translateY(-2px);
+        }
+
+        .message:active {
+            opacity: 0.9;
+            transition: opacity 0.2s;
         }
 
         .message.received {
@@ -1412,6 +1419,128 @@
         .profile-cancel:hover {
             background: #6a7883;
         }
+
+        /* Long Press Delete Styles */
+        .message.long-press {
+            animation: pulseLongPress 0.8s ease;
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(0, 172, 132, 0.3);
+        }
+
+        @keyframes pulseLongPress {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Delete popup for mobile */
+        .delete-popup-mobile {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d32f2f;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .delete-popup-mobile i {
+            font-size: 18px;
+        }
+
+        /* Confirmation dialog */
+        .delete-confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a3942;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 2000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+            max-width: 90%;
+        }
+
+        .delete-confirm-text {
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .delete-confirm-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-confirm-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .delete-confirm-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .delete-confirm-btn.delete {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .delete-confirm-btn.cancel {
+            background: #8696a0;
+            color: white;
+        }
+
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00a884;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 2001;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast-notification.error {
+            background: #d32f2f;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(0); opacity: 1; }
+            to { transform: translateX(-50%) translateY(20px); opacity: 0; }
+        }
+
+        /* Enhanced modal backdrop */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1999;
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
@@ -1639,8 +1768,11 @@
         </div>
     </div>
 
-    <!-- Audio Element for Remote Audio -->
+    <!-- Audio Elements -->
     <audio id="remoteAudio" autoplay></audio>
+    <audio id="incomingRingtone" loop style="display: none;">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-call-phone-1035.mp3" type="audio/mpeg">
+    </audio>
 
     <!-- Incoming Call Modal -->
     <div id="incomingCallModal" class="incoming-call-modal">
@@ -1753,7 +1885,11 @@
         let isVideoOff = false;
         let currentCallType = null;
         let outgoingCallTimeout = null;
-        let ringtoneAudio = null;
+        
+        // Long press variables
+        let longPressTimer = null;
+        let isLongPress = false;
+        let longPressMessageId = null;
 
         // DOM Elements
         const authContainer = document.getElementById('authContainer');
@@ -1803,6 +1939,7 @@
         const callContactInfo = document.getElementById('callContactInfo');
         const userOnlineDot = document.getElementById('userOnlineDot');
         const remoteAudio = document.getElementById('remoteAudio');
+        const incomingRingtone = document.getElementById('incomingRingtone');
         const profileModal = document.getElementById('profileModal');
         const profileAvatarLarge = document.getElementById('profileAvatarLarge');
         const profileAvatarText = document.getElementById('profileAvatarText');
@@ -1939,8 +2076,11 @@
             incomingCallType.textContent = callType === 'video' ? 'Video Call' : 'Voice Call';
             incomingCallModal.classList.add('active');
             
-            // Play ringtone
+            // Play ringtone with enhanced features
             playRingtone();
+            
+            // Vibrate if supported
+            vibrateOnRing();
             
             // Auto reject after 45 seconds
             setTimeout(() => {
@@ -1954,21 +2094,80 @@
         function playRingtone() {
             stopRingtone();
             try {
-                // Create audio element for ringtone
-                ringtoneAudio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-phone-ring-3582.mp3');
-                ringtoneAudio.loop = true;
-                ringtoneAudio.volume = 0.5;
-                ringtoneAudio.play().catch(e => console.log('Ringtone play failed:', e));
+                // Use the audio element with enhanced effects
+                if (incomingRingtone) {
+                    // Fade in effect
+                    incomingRingtone.volume = 0.1;
+                    incomingRingtone.play().then(() => {
+                        // Gradually increase volume
+                        let volume = 0.1;
+                        const fadeIn = setInterval(() => {
+                            if (volume < 0.7) {
+                                volume += 0.05;
+                                incomingRingtone.volume = Math.min(volume, 0.7);
+                            } else {
+                                clearInterval(fadeIn);
+                            }
+                        }, 100);
+                    }).catch(e => {
+                        console.log('Ringtone play failed:', e);
+                        // Fallback to silent notification
+                        createVisualRingtone();
+                    });
+                }
             } catch (error) {
                 console.error('Error playing ringtone:', error);
+                createVisualRingtone();
             }
         }
         
         function stopRingtone() {
-            if (ringtoneAudio) {
-                ringtoneAudio.pause();
-                ringtoneAudio.currentTime = 0;
-                ringtoneAudio = null;
+            if (incomingRingtone) {
+                // Fade out effect
+                let volume = incomingRingtone.volume;
+                const fadeOut = setInterval(() => {
+                    if (volume > 0) {
+                        volume -= 0.1;
+                        incomingRingtone.volume = Math.max(volume, 0);
+                    } else {
+                        clearInterval(fadeOut);
+                        incomingRingtone.pause();
+                        incomingRingtone.currentTime = 0;
+                    }
+                }, 50);
+            }
+            
+            // Stop visual ringtone
+            stopVisualRingtone();
+        }
+        
+        // Visual ringtone fallback
+        function createVisualRingtone() {
+            // Create pulsing effect on incoming call modal
+            const modal = document.getElementById('incomingCallModal');
+            if (modal) {
+                modal.style.animation = 'pulse 1.5s infinite';
+            }
+        }
+        
+        function stopVisualRingtone() {
+            const modal = document.getElementById('incomingCallModal');
+            if (modal) {
+                modal.style.animation = '';
+            }
+        }
+        
+        // Vibration functions
+        function vibrateOnRing() {
+            if ('vibrate' in navigator) {
+                // Pattern: vibrate for 500ms, pause for 300ms
+                navigator.vibrate([500, 300, 500, 300, 500]);
+            }
+        }
+        
+        function stopVibration() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(0);
             }
         }
         
@@ -1979,8 +2178,9 @@
             
             console.log('✅ Accepting call from:', callerName);
             
-            // Stop ringtone
+            // Stop ringtone and vibration
             stopRingtone();
+            stopVibration();
             
             // Hide incoming call modal
             incomingCallModal.classList.remove('active');
@@ -2067,6 +2267,7 @@
         window.rejectCall = () => {
             console.log('❌ Rejecting call');
             stopRingtone();
+            stopVibration();
             if (incomingCallData) {
                 incomingCallData.call.close();
                 incomingCallData = null;
@@ -2256,6 +2457,7 @@
             
             // Stop ringtone
             stopRingtone();
+            stopVibration();
             
             // Stop local stream
             if (localStream) {
@@ -2620,8 +2822,9 @@
                 outgoingCallModal.classList.remove('active');
                 profileModal.style.display = 'none';
                 
-                // Stop ringtone
+                // Stop ringtone and vibration
                 stopRingtone();
+                stopVibration();
                 
                 // Unsubscribe from listeners
                 if (messageUnsubscribe) messageUnsubscribe();
@@ -2724,7 +2927,7 @@
             alert('Chat menu options:\n1. View Contact\n2. Mute Notifications\n3. Search in Chat\n4. Clear Chat\n5. Delete Chat');
         }
 
-        // Load Chats - FIXED WITH COMPOSITE INDEX
+        // Load Chats
         function loadChats() {
             if (chatsUnsubscribe) chatsUnsubscribe();
 
@@ -2893,6 +3096,9 @@
             sendButton.style.display = 'flex';
             micButton.style.display = 'none';
             stopVoiceButton.style.display = 'none';
+            
+            // Setup long press listeners
+            setupLongPressForMessages();
         }
 
         // Reset Unread Count
@@ -2906,7 +3112,7 @@
             }
         }
 
-        // Load Messages - FIXED WITH COMPOSITE INDEX
+        // Load Messages
         function loadMessages() {
             if (messageUnsubscribe) {
                 messageUnsubscribe();
@@ -2958,6 +3164,9 @@
                     
                     // Mark messages as read
                     markMessagesAsRead();
+                    
+                    // Setup long press listeners
+                    setupLongPressForMessages();
                 }, (error) => {
                     console.error('Error loading messages with index:', error);
                     // Fallback: Load without ordering
@@ -3033,6 +3242,9 @@
                 
                 // Mark messages as read
                 markMessagesAsRead();
+                
+                // Setup long press listeners
+                setupLongPressForMessages();
             });
         }
 
@@ -3132,8 +3344,25 @@
                 ` : ''}
             `;
             
-            // Add reaction popup trigger
+            // Add event listeners for long press
             if (!isSystem && !isDeleted && !isDeletedForMe) {
+                // Add long press listeners
+                messageDiv.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        startLongPress(e, messageId);
+                    }
+                });
+                
+                messageDiv.addEventListener('touchend', clearLongPressTimer);
+                messageDiv.addEventListener('touchmove', clearLongPressTimer);
+                messageDiv.addEventListener('touchcancel', clearLongPressTimer);
+                
+                messageDiv.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showDeleteOptions(messageId);
+                });
+                
+                // Add reaction popup trigger
                 messageDiv.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     const popup = document.getElementById(`reactionPopup-${messageId}`);
@@ -3216,6 +3445,210 @@
                 console.error('Error adding reaction:', error);
             }
         };
+
+        // Long Press Functionality
+        function startLongPress(e, messageId) {
+            isLongPress = false;
+            clearLongPressTimer();
+            
+            const messageDiv = e.target.closest('.message');
+            if (!messageDiv) return;
+            
+            longPressMessageId = messageId;
+            
+            // Highlight message on long press
+            messageDiv.style.backgroundColor = messageDiv.classList.contains('sent') 
+                ? 'rgba(0, 92, 75, 0.5)' 
+                : 'rgba(32, 44, 51, 0.5)';
+            
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                showDeleteOptions(messageId);
+                // Reset background color
+                messageDiv.style.backgroundColor = '';
+            }, 800); // 800ms for long press
+        }
+        
+        function clearLongPressTimer() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                
+                // Reset background color for all messages
+                document.querySelectorAll('.message').forEach(msg => {
+                    msg.style.backgroundColor = '';
+                });
+            }
+        }
+        
+        function showDeleteOptions(messageId) {
+            clearLongPressTimer();
+            
+            // Get message text
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+            
+            const messageContent = messageDiv.querySelector('.message-content');
+            let messageText = '';
+            
+            if (messageContent) {
+                // Get text or check for other content types
+                if (messageContent.querySelector('img')) {
+                    messageText = '📷 Photo';
+                } else if (messageContent.querySelector('.voice-message-container')) {
+                    messageText = '🎤 Voice message';
+                } else {
+                    messageText = messageContent.textContent.trim();
+                }
+            }
+            
+            // Show delete modal
+            showDeleteModal(messageId, messageText);
+        }
+        
+        function setupLongPressForMessages() {
+            setTimeout(() => {
+                addLongPressListeners();
+            }, 500);
+        }
+        
+        function addLongPressListeners() {
+            const messages = document.querySelectorAll('.message');
+            
+            messages.forEach(message => {
+                if (!message.dataset.longPressAdded) {
+                    // Touch events for mobile
+                    message.addEventListener('touchstart', (e) => {
+                        startLongPress(e, message.dataset.messageId);
+                    });
+                    
+                    message.addEventListener('touchend', clearLongPressTimer);
+                    message.addEventListener('touchmove', clearLongPressTimer);
+                    
+                    // Mouse events for desktop
+                    message.addEventListener('mousedown', (e) => {
+                        if (e.button === 0) { // Left click only
+                            startLongPress(e, message.dataset.messageId);
+                        }
+                    });
+                    
+                    message.addEventListener('mouseup', clearLongPressTimer);
+                    message.addEventListener('mouseleave', clearLongPressTimer);
+                    message.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (message.dataset.messageId) {
+                            showDeleteOptions(message.dataset.messageId);
+                        }
+                    });
+                    
+                    message.dataset.longPressAdded = 'true';
+                }
+            });
+        }
+        
+        // Mobile-friendly delete confirmation
+        function showMobileDeleteOptions(messageId) {
+            if (!messageId) return;
+            
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Create mobile popup
+                const popup = document.createElement('div');
+                popup.className = 'delete-popup-mobile';
+                popup.innerHTML = `
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Delete message?</span>
+                    <i class="fas fa-times" onclick="this.parentElement.remove()"></i>
+                `;
+                
+                popup.addEventListener('click', () => {
+                    showDeleteModal(messageId);
+                    popup.remove();
+                });
+                
+                document.body.appendChild(popup);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.remove();
+                    }
+                }, 3000);
+            } else {
+                showDeleteModal(messageId);
+            }
+        }
+        
+        // Quick delete from message actions
+        function quickDeleteMessage(messageId, option) {
+            if (!messageId || !option) return;
+            
+            const messageText = document.querySelector(`[data-message-id="${messageId}"] .message-content`)?.textContent || 'this message';
+            
+            const dialog = document.createElement('div');
+            dialog.className = 'delete-confirm-dialog';
+            dialog.innerHTML = `
+                <div class="delete-confirm-text">
+                    Delete ${option === 'everyone' ? 'for everyone' : 'for you'}?
+                </div>
+                <div class="delete-confirm-buttons">
+                    <button class="delete-confirm-btn cancel" onclick="this.closest('.delete-confirm-dialog').remove()">
+                        Cancel
+                    </button>
+                    <button class="delete-confirm-btn delete" onclick="deleteMessageNow('${messageId}', '${option}')">
+                        Delete
+                    </button>
+                </div>
+            `;
+            
+            // Add overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = () => {
+                dialog.remove();
+                overlay.remove();
+            };
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(dialog);
+        }
+        
+        async function deleteMessageNow(messageId, option) {
+            try {
+                if (option === 'everyone') {
+                    await deleteDoc(doc(db, "messages", messageId));
+                } else {
+                    await updateDoc(doc(db, "messages", messageId), {
+                        deletedFor: arrayUnion(currentUser.uid)
+                    });
+                }
+                
+                // Remove dialog and overlay
+                document.querySelector('.delete-confirm-dialog')?.remove();
+                document.querySelector('.modal-overlay')?.remove();
+                
+                // Show success feedback
+                showToast(`Message deleted ${option === 'everyone' ? 'for everyone' : 'for you'}`);
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showToast('Failed to delete message', 'error');
+            }
+        }
+        
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideDown 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // Show Delete Modal
         window.showDeleteModal = (messageId, messageText) => {
@@ -3351,9 +3784,12 @@
                 deleteOption = null;
                 currentMessageData = null;
                 
+                // Show toast
+                showToast(`Message deleted ${deleteOption === 'everyone' ? 'for everyone' : 'for you'}`);
+                
             } catch (error) {
                 console.error('Error deleting message:', error);
-                alert('Failed to delete message. Please try again.');
+                showToast('Failed to delete message', 'error');
                 deleteModal.style.display = 'none';
             }
         };
@@ -4029,7 +4465,20 @@
                 }
                 
                 stopRingtone();
+                stopVibration();
             });
+            
+            // Setup mutation observer to detect new messages
+            const observer = new MutationObserver(() => {
+                setupLongPressForMessages();
+            });
+            
+            observer.observe(messagesContainer, { childList: true, subtree: true });
+            
+            // Initialize long-press
+            setTimeout(() => {
+                setupLongPressForMessages();
+            }, 1000);
         });
     </script>
 </body>
