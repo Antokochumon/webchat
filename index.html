@@ -6,7 +6,161 @@
     <title>WebChat - Real-time Chat with Video Calls</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ====== LOADER STYLES ====== */
+        /* ====== ENHANCED BACKGROUND & UI ====== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0c1317 0%, #111b21 25%, #1a2730 50%, #111b21 75%, #0c1317 100%);
+            z-index: -2;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 168, 132, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(37, 211, 102, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(0, 92, 75, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Enhanced message bubbles */
+        .message.received {
+            background: linear-gradient(135deg, rgba(32, 44, 51, 0.95), rgba(42, 57, 66, 0.95));
+            border-left: 3px solid #00a884;
+        }
+
+        .message.sent {
+            background: linear-gradient(135deg, rgba(0, 92, 75, 0.95), rgba(0, 168, 132, 0.95));
+            border-right: 3px solid #25D366;
+        }
+
+        /* Enhanced buttons */
+        .auth-btn, .send-button, .call-btn.accept {
+            background: linear-gradient(135deg, #00a884 0%, #25D366 50%, #128C7E 100%);
+            background-size: 200% 200%;
+            animation: gradientFlow 3s ease infinite;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Enhanced chat items */
+        .chat-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            margin: 2px 8px;
+        }
+
+        .chat-item:hover {
+            background: rgba(42, 57, 66, 0.4);
+            transform: translateX(5px);
+        }
+
+        .chat-item.active {
+            background: linear-gradient(135deg, rgba(0, 92, 75, 0.3), rgba(0, 168, 132, 0.2));
+            border-left: 4px solid #00a884;
+        }
+
+        /* ====== CAMERA TOGGLE BUTTON ====== */
+        .camera-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(42, 57, 66, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 2003;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .camera-toggle-btn:hover {
+            background: rgba(0, 168, 132, 0.8);
+            transform: scale(1.1);
+        }
+
+        .camera-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ====== GROUP CHAT MODAL ====== */
+        .group-creation-modal .modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .group-members-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(42, 57, 66, 0.4);
+            border-radius: 12px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .group-member-select {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .group-member-select:hover {
+            background: rgba(0, 168, 132, 0.1);
+        }
+
+        .group-member-select.selected {
+            background: rgba(0, 168, 132, 0.2);
+            border-left: 3px solid #00a884;
+        }
+
+        .group-member-checkbox {
+            margin-right: 10px;
+        }
+
+        .group-avatar-preview {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+        }
+
+        /* ====== REST OF THE STYLES (UNCHANGED) ====== */
         .loader {
             display: none;
             width: 20px;
@@ -31,7 +185,6 @@
             opacity: 0.7;
         }
 
-        /* ====== GROUP CHAT STYLES ====== */
         .group-avatar {
             position: relative;
             width: 40px;
@@ -106,7 +259,6 @@
             font-weight: bold;
         }
 
-        /* ====== REST OF THE STYLES (UNCHANGED) ====== */
         * {
             margin: 0;
             padding: 0;
@@ -163,7 +315,6 @@
             -webkit-backface-visibility: hidden;
         }
 
-        /* ====== AUTH CONTAINER ====== */
         .auth-container {
             width: min(90%, 400px);
             margin: clamp(20px, 8vh, 40px) auto;
@@ -367,7 +518,6 @@
             transform: scale(1.1);
         }
 
-        /* Floating Animation */
         .floating-animation {
             position: absolute;
             top: 0;
@@ -423,7 +573,6 @@
             }
         }
 
-        /* ====== APP CONTAINER ====== */
         .app-container {
             display: flex;
             height: 100vh;
@@ -433,7 +582,6 @@
             overflow: hidden;
         }
 
-        /* ====== SIDEBAR ====== */
         .sidebar {
             width: 100vw;
             height: 100%;
@@ -451,7 +599,6 @@
             transform: translateX(-100%);
         }
 
-        /* ====== USER INFO BAR ====== */
         .user-info {
             background: #202c33;
             padding: 12px 16px;
@@ -515,7 +662,6 @@
             transform: scale(0.95);
         }
 
-        /* ====== MENU DROPDOWN ====== */
         .menu-dropdown {
             position: absolute;
             top: 100%;
@@ -565,7 +711,6 @@
             color: #ff6b6b;
         }
 
-        /* ====== SEARCH BOX ====== */
         .search-box {
             padding: clamp(10px, 3vw, 12px);
             background: #111b21;
@@ -590,7 +735,6 @@
             background: #2a3942;
         }
 
-        /* ====== CHAT LIST ====== */
         .chat-list {
             flex: 1;
             overflow-y: auto;
@@ -614,7 +758,6 @@
             border-radius: 2px;
         }
 
-        /* ====== CHAT ITEMS ====== */
         .chat-item {
             display: flex;
             padding: clamp(12px, 3vw, 14px);
@@ -709,7 +852,6 @@
             flex-shrink: 0;
         }
 
-        /* ====== CHAT ACTIONS (Delete button in chat list) ====== */
         .chat-actions-menu {
             position: absolute;
             right: 10px;
@@ -748,7 +890,6 @@
             color: white;
         }
 
-        /* ====== CHAT AREA ====== */
         .chat-area {
             flex: 1;
             display: none;
@@ -767,7 +908,6 @@
             transform: translateX(0);
         }
 
-        /* ====== CHAT HEADER ====== */
         .chat-header-area {
             background: #202c33;
             padding: clamp(12px, 3vw, 14px) clamp(14px, 4vw, 16px);
@@ -820,7 +960,6 @@
             transform: scale(0.95);
         }
 
-        /* ====== BACK BUTTON ====== */
         .back-to-chats {
             display: flex;
             cursor: pointer;
@@ -837,7 +976,6 @@
             transform: scale(0.95);
         }
 
-        /* ====== MESSAGES CONTAINER ====== */
         .messages-container {
             flex: 1;
             padding: clamp(12px, 3vw, 16px);
@@ -851,7 +989,6 @@
             scroll-behavior: smooth;
         }
 
-        /* ====== MESSAGE ROW ====== */
         .message-row {
             display: flex;
             margin-bottom: 8px;
@@ -867,7 +1004,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ====== MESSAGE BUBBLE ====== */
         .message {
             max-width: min(75%, 320px);
             padding: clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px);
@@ -914,7 +1050,6 @@
             gap: 4px;
         }
 
-        /* ====== MESSAGE CONTEXT MENU ====== */
         .message-context-menu {
             position: absolute;
             background: rgba(35, 49, 56, 0.95);
@@ -965,7 +1100,6 @@
             color: #ff6b6b;
         }
 
-        /* ====== MESSAGE INPUT AREA ====== */
         .message-input-area {
             background: #202c33;
             padding: clamp(10px, 3vw, 12px) clamp(12px, 3vw, 16px);
@@ -1018,7 +1152,6 @@
             transform: scale(0.95);
         }
 
-        /* ====== SEND BUTTON ====== */
         .send-button {
             background: #005c4b;
             color: white;
@@ -1041,7 +1174,6 @@
             box-shadow: 0 2px 8px rgba(0, 92, 75, 0.4);
         }
 
-        /* ====== EMOJI PICKER ====== */
         .emoji-picker-container {
             position: absolute;
             bottom: 100%;
@@ -1062,7 +1194,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ====== ATTACHMENT MENU ====== */
         .attachment-menu {
             position: absolute;
             bottom: 100%;
@@ -1102,7 +1233,6 @@
             transform: translateX(4px);
         }
 
-        /* ====== ONLINE STATUS ====== */
         .online-dot {
             width: clamp(10px, 2.5vw, 12px);
             height: clamp(10px, 2.5vw, 12px);
@@ -1125,7 +1255,6 @@
             display: inline-block;
         }
 
-        /* ====== EMPTY STATES ====== */
         .empty-chat {
             display: flex;
             flex-direction: column;
@@ -1156,7 +1285,6 @@
             font-size: clamp(14px, 3.5vw, 15px);
         }
 
-        /* ====== SEARCH RESULTS ====== */
         .search-result-item {
             display: flex;
             padding: clamp(12px, 3vw, 14px);
@@ -1201,7 +1329,6 @@
             font-size: clamp(14px, 3.5vw, 15px);
         }
 
-        /* ====== SPINNER ====== */
         .spinner {
             width: clamp(36px, 9vw, 40px);
             height: clamp(36px, 9vw, 40px);
@@ -1217,7 +1344,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* ====== SYSTEM MESSAGE ====== */
         .system-message {
             text-align: center;
             margin: clamp(8px, 2vw, 10px) 0;
@@ -1227,7 +1353,6 @@
             padding: 0 clamp(8px, 2vw, 12px);
         }
 
-        /* ====== FILE MESSAGE ====== */
         .file-message {
             display: flex;
             align-items: center;
@@ -1296,7 +1421,6 @@
             box-shadow: 0 1px 4px rgba(0, 92, 75, 0.4);
         }
 
-        /* ====== IMAGE PREVIEW ====== */
         .image-preview {
             max-width: min(280px, 85vw);
             max-height: min(280px, 60vh);
@@ -1311,7 +1435,6 @@
             transform: scale(0.98);
         }
 
-        /* Image Download Overlay */
         .image-overlay {
             position: absolute;
             top: 0;
@@ -1354,7 +1477,6 @@
             transform: scale(1.1);
         }
 
-        /* ====== VOICE MESSAGE ====== */
         .voice-message-container {
             display: flex;
             align-items: center;
@@ -1391,7 +1513,6 @@
             color: #8696a0;
         }
 
-        /* ====== LOCATION MESSAGE ====== */
         .location-message {
             max-width: min(280px, 85vw);
             border-radius: 16px;
@@ -1462,7 +1583,6 @@
             transform: translateY(2px);
         }
 
-        /* ====== SATELLITE VIEW STYLES ====== */
         .satellite-view {
             width: 100%;
             height: 200px;
@@ -1594,7 +1714,6 @@
             backdrop-filter: blur(10px);
         }
 
-        /* ====== MODAL OVERLAYS ====== */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -1627,7 +1746,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* ====== DELETE MODAL ====== */
         .delete-options {
             display: flex;
             flex-direction: column;
@@ -1708,7 +1826,6 @@
             background: #6a7883;
         }
 
-        /* ====== CALL INTERFACE ====== */
         .call-interface {
             position: fixed;
             top: 0;
@@ -1836,7 +1953,6 @@
             background: #b71c1c;
         }
 
-        /* Incoming Call Mute Button */
         .call-btn.sound-off {
             background: #2a3942;
             color: white;
@@ -1846,7 +1962,6 @@
             background: #202c33;
         }
 
-        /* ====== INCOMING/OUTGOING CALL MODALS ====== */
         .incoming-call-modal, .outgoing-call-modal {
             position: fixed;
             top: 50%;
@@ -1936,7 +2051,6 @@
             flex-wrap: wrap;
         }
 
-        /* ====== PROFILE MODAL ====== */
         .profile-modal-content {
             background: #2a3942;
             padding: clamp(24px, 6vw, 30px);
@@ -2055,7 +2169,6 @@
             transform: translateY(2px);
         }
 
-        /* ====== FILE UPLOAD PROGRESS ====== */
         .upload-progress {
             position: fixed;
             top: 50%;
@@ -2117,7 +2230,6 @@
             text-align: right;
         }
 
-        /* ====== LARGE FILE UPLOAD ====== */
         .large-file-upload {
             position: fixed;
             top: 50%;
@@ -2175,7 +2287,6 @@
             margin-top: clamp(6px, 1.5vw, 8px);
         }
 
-        /* ====== NETWORK STATUS ====== */
         .network-status {
             position: fixed;
             top: max(env(safe-area-inset-top, 0px), 10px);
@@ -2203,7 +2314,6 @@
             color: #ff6b6b;
         }
 
-        /* ====== TOAST NOTIFICATION ====== */
         .toast-notification {
             position: fixed;
             bottom: max(env(safe-area-inset-bottom, 0px) + 20px, 20px);
@@ -2232,7 +2342,6 @@
             background: rgba(255, 152, 0, 0.95);
         }
 
-        /* ====== ENHANCED FEATURES ====== */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -2268,7 +2377,6 @@
             30% { transform: translateY(-5px); }
         }
 
-        /* ====== SWIPE HINT ====== */
         .swipe-hint {
             position: fixed;
             bottom: max(env(safe-area-inset-bottom, 0px) + 80px, 80px);
@@ -2289,7 +2397,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* ====== DELETED MESSAGE ====== */
         .deleted-message {
             color: #8696a0;
             font-style: italic;
@@ -2300,7 +2407,6 @@
             font-style: italic;
         }
 
-        /* ====== VIDEO ELEMENTS ====== */
         .remote-video-container {
             width: 100%;
             height: 100%;
@@ -2335,7 +2441,6 @@
             object-fit: cover;
         }
 
-        /* ====== MESSAGE SELECTION ====== */
         .message.selected {
             background: rgba(0, 168, 132, 0.3) !important;
             border-color: #00a884;
@@ -2362,7 +2467,6 @@
             100% { opacity: 0; }
         }
 
-        /* ====== PERFORMANCE OVERLAY ====== */
         .performance-overlay {
             position: fixed;
             top: 10px;
@@ -2376,7 +2480,6 @@
             display: none;
         }
 
-        /* ====== RESPONSIVE BREAKPOINTS ====== */
         @media (min-width: 768px) {
             .app-container {
                 display: flex;
@@ -2498,7 +2601,6 @@
             }
         }
 
-        /* ====== REDUCED MOTION ====== */
         @media (prefers-reduced-motion: reduce) {
             * {
                 animation-duration: 0.01ms !important;
@@ -2551,7 +2653,6 @@
                 <input type="text" id="forwardSearch" placeholder="Search contacts to forward to..." style="width: 100%;">
             </div>
             <div class="chat-list" id="forwardContactList" style="max-height: 300px; overflow-y: auto; background: transparent; margin: 10px 0; border-radius: 12px;">
-                <!-- Forward contacts will load here -->
                 <div class="no-results" style="padding: 20px;">
                     <p>No contacts found</p>
                 </div>
@@ -2559,6 +2660,29 @@
             <div class="modal-buttons">
                 <button class="modal-cancel" onclick="closeForwardModal()">Cancel</button>
                 <button class="profile-save" onclick="confirmForwardMessage()" id="confirmForwardBtn" disabled>Forward</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Creation Modal -->
+    <div id="groupCreationModal" class="modal-overlay group-creation-modal">
+        <div class="modal-content">
+            <h3>Create New Group</h3>
+            <div class="form-group">
+                <input type="text" id="groupNameInput" placeholder="Group Name" style="width: 100%;">
+            </div>
+            <div class="group-avatar-preview" id="groupAvatarPreview">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="search-box" style="background: transparent; padding: 10px 0;">
+                <input type="text" id="groupMemberSearch" placeholder="Search contacts to add..." style="width: 100%;">
+            </div>
+            <div class="group-members-list" id="groupMembersList">
+                <!-- Group members will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-cancel" onclick="closeGroupCreationModal()">Cancel</button>
+                <button class="profile-save" onclick="createNewGroup()" id="createGroupBtn">Create Group</button>
             </div>
         </div>
     </div>
@@ -2887,6 +3011,14 @@
             <div class="call-btn video-off" onclick="toggleVideo()">
                 <i class="fas fa-video-slash" id="videoIcon"></i>
             </div>
+            <!-- Camera Toggle Button -->
+            <div class="call-btn camera-toggle" onclick="toggleCamera()" id="cameraToggleBtn" style="display: none;">
+                <i class="fas fa-camera-rotate" id="cameraToggleIcon"></i>
+            </div>
+        </div>
+        <!-- Camera Toggle Button in Call Interface -->
+        <div class="camera-toggle-btn" onclick="toggleCamera()" id="floatingCameraToggle" style="display: none;">
+            <i class="fas fa-camera-rotate"></i>
         </div>
     </div>
 
@@ -3022,7 +3154,7 @@
 
     <!-- Audio Elements -->
     <audio id="remoteAudio" autoplay></audio>
-    <audio id="messageSound" style="display: none;"></audio>
+<audio id="messageSound" style="display: none;"></audio>
 
     <!-- Swipe Hint -->
     <div class="swipe-hint" id="swipeHint" style="display: none;">
@@ -3146,6 +3278,11 @@
         // Group chat state
         let currentGroupId = null;
         let currentGroupMembers = [];
+        let selectedGroupMembers = new Set();
+
+        // Camera state
+        let currentCamera = 'user'; // 'user' for front, 'environment' for back
+        let availableCameras = [];
 
         // DOM Elements
         const authContainer = document.getElementById('authContainer');
@@ -3235,6 +3372,14 @@
         const confirmForwardBtn = document.getElementById('confirmForwardBtn');
         const loginButton = document.getElementById('loginButton');
         const signupButton = document.getElementById('signupButton');
+        const groupCreationModal = document.getElementById('groupCreationModal');
+        const groupNameInput = document.getElementById('groupNameInput');
+        const groupAvatarPreview = document.getElementById('groupAvatarPreview');
+        const groupMemberSearch = document.getElementById('groupMemberSearch');
+        const groupMembersList = document.getElementById('groupMembersList');
+        const createGroupBtn = document.getElementById('createGroupBtn');
+        const cameraToggleBtn = document.getElementById('cameraToggleBtn');
+        const floatingCameraToggle = document.getElementById('floatingCameraToggle');
 
         // ====== LOADER FUNCTIONS ======
         function showButtonLoader(button, show) {
@@ -3242,7 +3387,6 @@
             const btnIcon = button.querySelector('.btn-icon');
             
             if (show) {
-                // Create loader if not exists
                 let loader = button.querySelector('.loader');
                 if (!loader) {
                     loader = document.createElement('div');
@@ -3299,17 +3443,6 @@
                 };
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
-            };
-        }
-
-        function throttle(func, limit) {
-            let inThrottle;
-            return function(...args) {
-                if (!inThrottle) {
-                    func.apply(this, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
             };
         }
 
@@ -3426,7 +3559,6 @@
                 monitorNetworkStatus();
                 startPerformanceMonitor();
                 
-                // Load profile picture
                 const profilePic = await loadProfilePicture(user.uid);
                 if (profilePic) {
                     userProfilePicture = profilePic;
@@ -3521,48 +3653,41 @@
                 
                 const userChats = new Map();
                 
-                // First pass: collect all chats and group by user
                 snapshot.forEach((docSnapshot) => {
                     const chat = docSnapshot.data();
                     chat.id = docSnapshot.id;
                     
-                    // Get the other user ID
-                    const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-                    if (!otherUserId) return;
-                    
-                    // Check if we already have a chat for this user
-                    const existingChat = userChats.get(otherUserId);
-                    
-                    if (!existingChat) {
-                        // First chat with this user
-                        userChats.set(otherUserId, chat);
+                    if (chat.isGroup) {
+                        userChats.set(chat.id, chat);
                     } else {
-                        // Compare timestamps and keep the most recent one
-                        const existingTime = existingChat.lastMessageTime?.seconds || 0;
-                        const newTime = chat.lastMessageTime?.seconds || 0;
+                        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+                        if (!otherUserId) return;
                         
-                        if (newTime > existingTime) {
-                            // This chat is more recent, replace it
+                        const existingChat = userChats.get(otherUserId);
+                        
+                        if (!existingChat) {
                             userChats.set(otherUserId, chat);
-                            
-                            // Delete the older chat from database
-                            deleteDoc(doc(db, "chats", existingChat.id)).catch(console.error);
                         } else {
-                            // This chat is older, delete it
-                            deleteDoc(docSnapshot.ref).catch(console.error);
+                            const existingTime = existingChat.lastMessageTime?.seconds || 0;
+                            const newTime = chat.lastMessageTime?.seconds || 0;
+                            
+                            if (newTime > existingTime) {
+                                userChats.set(otherUserId, chat);
+                                deleteDoc(doc(db, "chats", existingChat.id)).catch(console.error);
+                            } else {
+                                deleteDoc(docSnapshot.ref).catch(console.error);
+                            }
                         }
                     }
                 });
                 
-                // Convert map to array and sort by lastMessageTime
                 const chats = Array.from(userChats.values());
                 chats.sort((a, b) => {
                     const timeA = a.lastMessageTime?.seconds || 0;
                     const timeB = b.lastMessageTime?.seconds || 0;
-                    return timeB - timeA; // Newest first
+                    return timeB - timeA;
                 });
                 
-                // Render each chat
                 for (const chat of chats) {
                     await renderChatItem(chat, chat.id);
                 }
@@ -3570,77 +3695,131 @@
         }
 
         async function renderChatItem(chat, chatId) {
-            const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-            if (!otherUserId) return;
-
             try {
-                const otherUserDoc = await getDoc(doc(db, "users", otherUserId));
-                
-                if (!otherUserDoc.exists()) {
-                    return;
+                if (chat.isGroup) {
+                    await renderGroupChatItem(chat, chatId);
+                } else {
+                    await renderIndividualChatItem(chat, chatId);
                 }
-
-                const otherUser = otherUserDoc.data();
-                const lastMessage = chat.lastMessage || 'No messages yet';
-                const lastMessageTime = chat.lastMessageTime ? formatTime(chat.lastMessageTime.toDate()) : '';
-                
-                let unreadCount = 0;
-                if (chat.unreadCount && chat.unreadCount[currentUser.uid]) {
-                    unreadCount = chat.unreadCount[currentUser.uid];
-                }
-                
-                // Load profile picture from chat data or user data
-                let profilePicture = chat.profilePictures?.[otherUserId] || otherUser.profilePicture;
-                
-                const chatItem = document.createElement('div');
-                chatItem.className = 'chat-item';
-                chatItem.dataset.chatId = chatId;
-                chatItem.dataset.userId = otherUserId;
-                chatItem.onclick = () => openChat(chatId, otherUser);
-
-                let statusIcon = '';
-                if (chat.sender === currentUser.uid) {
-                    if (chat.readBy?.includes(otherUserId)) {
-                        statusIcon = '<i class="fas fa-check-double blue-tick"></i>';
-                    } else {
-                        statusIcon = '<i class="fas fa-check-double"></i>';
-                    }
-                }
-
-                const avatarStyle = profilePicture 
-                    ? `background-image: url(${profilePicture}); background-size: cover; background-position: center;` 
-                    : `background-color: ${otherUser.avatarColor || '#25D366'}`;
-                
-                const avatarContent = profilePicture ? '' : otherUser.name.charAt(0).toUpperCase();
-
-                chatItem.innerHTML = `
-                    <div class="avatar-container ${otherUser.online ? 'avatar-online' : ''}">
-                        <div class="chat-avatar" style="${avatarStyle}">
-                            ${avatarContent}
-                        </div>
-                    </div>
-                    <div class="chat-info">
-                        <div class="chat-header">
-                            <div class="chat-name">${otherUser.name}</div>
-                            <div class="chat-time">${lastMessageTime}</div>
-                        </div>
-                        <div class="chat-preview">
-                            <div class="chat-message">${lastMessage}</div>
-                            ${statusIcon}
-                            ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                        </div>
-                    </div>
-                    <div class="chat-actions-menu">
-                        <div class="chat-action-btn delete" onclick="showDeleteChatModal('${chatId}', event)">
-                            <i class="fas fa-trash-alt"></i>
-                        </div>
-                    </div>
-                `;
-
-                chatList.appendChild(chatItem);
             } catch (error) {
                 console.error('Error rendering chat item:', error);
             }
+        }
+
+        async function renderIndividualChatItem(chat, chatId) {
+            const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+            if (!otherUserId) return;
+
+            const otherUserDoc = await getDoc(doc(db, "users", otherUserId));
+            
+            if (!otherUserDoc.exists()) {
+                return;
+            }
+
+            const otherUser = otherUserDoc.data();
+            const lastMessage = chat.lastMessage || 'No messages yet';
+            const lastMessageTime = chat.lastMessageTime ? formatTime(chat.lastMessageTime.toDate()) : '';
+            
+            let unreadCount = 0;
+            if (chat.unreadCount && chat.unreadCount[currentUser.uid]) {
+                unreadCount = chat.unreadCount[currentUser.uid];
+            }
+            
+            let profilePicture = chat.profilePictures?.[otherUserId] || otherUser.profilePicture;
+            
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-item';
+            chatItem.dataset.chatId = chatId;
+            chatItem.dataset.userId = otherUserId;
+            chatItem.onclick = () => openChat(chatId, otherUser);
+
+            let statusIcon = '';
+            if (chat.sender === currentUser.uid) {
+                if (chat.readBy?.includes(otherUserId)) {
+                    statusIcon = '<i class="fas fa-check-double blue-tick"></i>';
+                } else {
+                    statusIcon = '<i class="fas fa-check-double"></i>';
+                }
+            }
+
+            const avatarStyle = profilePicture 
+                ? `background-image: url(${profilePicture}); background-size: cover; background-position: center;` 
+                : `background-color: ${otherUser.avatarColor || '#25D366'}`;
+            
+            const avatarContent = profilePicture ? '' : otherUser.name.charAt(0).toUpperCase();
+
+            chatItem.innerHTML = `
+                <div class="avatar-container ${otherUser.online ? 'avatar-online' : ''}">
+                    <div class="chat-avatar" style="${avatarStyle}">
+                        ${avatarContent}
+                    </div>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-header">
+                        <div class="chat-name">${otherUser.name}</div>
+                        <div class="chat-time">${lastMessageTime}</div>
+                    </div>
+                    <div class="chat-preview">
+                        <div class="chat-message">${lastMessage}</div>
+                        ${statusIcon}
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    </div>
+                </div>
+                <div class="chat-actions-menu">
+                    <div class="chat-action-btn delete" onclick="showDeleteChatModal('${chatId}', event)">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                </div>
+            `;
+
+            chatList.appendChild(chatItem);
+        }
+
+        async function renderGroupChatItem(chat, chatId) {
+            const lastMessage = chat.lastMessage || 'No messages yet';
+            const lastMessageTime = chat.lastMessageTime ? formatTime(chat.lastMessageTime.toDate()) : '';
+            
+            let unreadCount = 0;
+            if (chat.unreadCount && chat.unreadCount[currentUser.uid]) {
+                unreadCount = chat.unreadCount[currentUser.uid];
+            }
+            
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-item';
+            chatItem.dataset.chatId = chatId;
+            chatItem.dataset.isGroup = 'true';
+            chatItem.onclick = () => openGroupChat(chatId, chat);
+
+            const avatarStyle = chat.groupAvatar 
+                ? `background-image: url(${chat.groupAvatar}); background-size: cover; background-position: center;` 
+                : `background-color: ${chat.avatarColor || '#25D366'}`;
+            
+            const avatarContent = chat.groupAvatar ? '' : `<i class="fas fa-users"></i>`;
+
+            chatItem.innerHTML = `
+                <div class="avatar-container">
+                    <div class="chat-avatar" style="${avatarStyle}">
+                        ${avatarContent}
+                    </div>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-header">
+                        <div class="chat-name">${chat.groupName} <span class="group-chat-indicator">👥</span></div>
+                        <div class="chat-time">${lastMessageTime}</div>
+                    </div>
+                    <div class="chat-preview">
+                        <div class="chat-message">${lastMessage}</div>
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    </div>
+                </div>
+                <div class="chat-actions-menu">
+                    <div class="chat-action-btn delete" onclick="showDeleteChatModal('${chatId}', event)">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                </div>
+            `;
+
+            chatList.appendChild(chatItem);
         }
 
         async function openChat(chatId, contact) {
@@ -3651,10 +3830,11 @@
             console.log('Opening chat:', chatId, 'with:', contact.name);
             currentChatId = chatId;
             currentContact = contact;
+            currentGroupId = null;
+            currentGroupMembers = [];
             
             contactName.textContent = contact.name;
             
-            // Load contact's profile picture
             const profilePicture = await loadProfilePicture(contact.uid);
             if (profilePicture) {
                 contactAvatar.style.backgroundImage = `url(${profilePicture})`;
@@ -3676,7 +3856,6 @@
                 onlineDot.style.display = 'none';
             }
             
-            // Update active chat styling
             document.querySelectorAll('.chat-item').forEach(item => {
                 item.classList.remove('active');
             });
@@ -3689,13 +3868,11 @@
             
             await resetUnreadCount(chatId);
             
-            // Mobile responsive behavior
             if (window.innerWidth <= 768) {
                 sidebar.classList.add('hidden');
                 chatArea.classList.add('active');
                 document.querySelector('.back-to-chats').style.display = 'flex';
                 
-                // Show swipe hint
                 swipeHint.style.display = 'flex';
                 setTimeout(() => {
                     swipeHint.style.display = 'none';
@@ -3704,6 +3881,66 @@
             
             messageInput.disabled = false;
             messageInput.placeholder = "Type a message";
+            messageInput.focus();
+            
+            loadMessages();
+            
+            sendButton.style.display = 'flex';
+            micButton.style.display = 'none';
+            stopVoiceButton.style.display = 'none';
+            
+            setupMessageContextMenu();
+        }
+
+        async function openGroupChat(chatId, groupData) {
+            if (clickDebounce) return;
+            clickDebounce = true;
+            setTimeout(() => clickDebounce = false, 300);
+
+            console.log('Opening group chat:', chatId, 'with:', groupData.groupName);
+            currentChatId = chatId;
+            currentGroupId = chatId;
+            currentContact = null;
+            currentGroupMembers = groupData.participants || [];
+            
+            contactName.textContent = `${groupData.groupName} 👥`;
+            
+            if (groupData.groupAvatar) {
+                contactAvatar.style.backgroundImage = `url(${groupData.groupAvatar})`;
+                contactAvatar.textContent = '';
+            } else {
+                contactAvatar.style.backgroundImage = '';
+                contactAvatar.textContent = '<i class="fas fa-users"></i>';
+                contactAvatar.style.backgroundColor = groupData.avatarColor || '#25D366';
+                contactAvatar.innerHTML = '<i class="fas fa-users"></i>';
+            }
+            
+            const memberCount = groupData.participants?.length || 0;
+            contactStatus.textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
+            onlineDot.style.display = 'none';
+            
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeChat = document.querySelector(`[data-chat-id="${chatId}"]`);
+            if (activeChat) activeChat.classList.add('active');
+            
+            await resetUnreadCount(chatId);
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('hidden');
+                chatArea.classList.add('active');
+                document.querySelector('.back-to-chats').style.display = 'flex';
+                
+                swipeHint.style.display = 'flex';
+                setTimeout(() => {
+                    swipeHint.style.display = 'none';
+                }, 3000);
+            }
+            
+            messageInput.disabled = false;
+            messageInput.placeholder = "Type a message to the group";
             messageInput.focus();
             
             loadMessages();
@@ -3770,11 +4007,10 @@
                         messages.push({...message, id: docSnapshot.id});
                     });
                     
-                    // Sort manually on client side to avoid Firebase index error
                     messages.sort((a, b) => {
                         const timeA = a.timestamp?.seconds || 0;
                         const timeB = b.timestamp?.seconds || 0;
-                        return timeA - timeB; // Ascending order
+                        return timeA - timeB;
                     });
                     
                     messages.forEach(message => {
@@ -3814,7 +4050,7 @@
             
             let statusIcon = '';
             if (message.sender === currentUser.uid && !isSystem && !isDeleted && !isDeletedForMe) {
-                if (message.readBy?.includes(currentContact?.uid)) {
+                if (message.readBy?.length > 1 || (currentGroupId && message.readBy?.includes(currentUser.uid))) {
                     statusIcon = '<i class="fas fa-check-double blue-tick"></i>';
                 } else if (message.delivered) {
                     statusIcon = '<i class="fas fa-check-double"></i>';
@@ -3952,7 +4188,7 @@
                 return;
             }
             
-            if (!currentChatId || !currentContact) {
+            if (!currentChatId) {
                 showToast('Please select a chat first', 'error');
                 return;
             }
@@ -3975,13 +4211,22 @@
 
                 const messageRef = await addDoc(collection(db, "messages"), messageData);
 
-                await updateDoc(doc(db, "chats", currentChatId), {
-                    lastMessage: text,
-                    lastMessageTime: serverTimestamp(),
-                    sender: currentUser.uid,
-                    readBy: [currentUser.uid],
-                    [`unreadCount.${currentContact.uid}`]: increment(1)
-                });
+                if (currentGroupId) {
+                    await updateDoc(doc(db, "chats", currentChatId), {
+                        lastMessage: text,
+                        lastMessageTime: serverTimestamp(),
+                        sender: currentUser.uid,
+                        readBy: [currentUser.uid]
+                    });
+                } else {
+                    await updateDoc(doc(db, "chats", currentChatId), {
+                        lastMessage: text,
+                        lastMessageTime: serverTimestamp(),
+                        sender: currentUser.uid,
+                        readBy: [currentUser.uid],
+                        [`unreadCount.${currentContact.uid}`]: increment(1)
+                    });
+                }
 
                 messageInput.value = '';
                 
@@ -4001,7 +4246,6 @@
                     }
                 }, 1000);
 
-                // Play send sound
                 playMessageSound('send');
 
             } catch (error) {
@@ -4018,7 +4262,7 @@
         };
 
         window.handleTyping = () => {
-            if (!currentChatId || !currentContact) return;
+            if (!currentChatId) return;
             
             if (isTypingTimeout) {
                 clearTimeout(isTypingTimeout);
@@ -4063,7 +4307,6 @@
 
         window.downloadImage = async (imageUrl, fileName) => {
             try {
-                // Check if it's a base64 image
                 if (imageUrl.startsWith('data:image')) {
                     const link = document.createElement('a');
                     link.href = imageUrl;
@@ -4072,7 +4315,6 @@
                     link.click();
                     document.body.removeChild(link);
                 } else {
-                    // For URL images
                     const response = await fetch(imageUrl);
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
@@ -4093,13 +4335,9 @@
 
         // ====== MESSAGE CONTEXT MENU ======
         function setupMessageContextMenu() {
-            // Remove existing listeners
             document.removeEventListener('click', hideMessageContextMenu);
-            
-            // Add click listener to hide context menu
             document.addEventListener('click', hideMessageContextMenu);
             
-            // Add context menu to each message
             const messages = document.querySelectorAll('.message');
             messages.forEach(message => {
                 message.oncontextmenu = (e) => {
@@ -4108,7 +4346,6 @@
                 };
                 
                 message.onclick = (e) => {
-                    // Handle double click for copy
                     const currentTime = Date.now();
                     if (currentTime - lastClickTime < 300) {
                         copyMessageTextFromClick(message);
@@ -4124,14 +4361,12 @@
             selectedMessageId = messageElement.dataset.messageId;
             selectedMessageText = messageElement.dataset.messageText;
             
-            // Position the context menu
             const rect = messageElement.getBoundingClientRect();
             messageContextMenu.style.left = rect.left + 'px';
             messageContextMenu.style.top = rect.top + 'px';
             messageContextMenu.classList.add('active');
             messageContextMenuActive = true;
             
-            // Highlight the selected message
             messageElement.classList.add('selected');
         }
 
@@ -4139,7 +4374,6 @@
             messageContextMenu.classList.remove('active');
             messageContextMenuActive = false;
             
-            // Remove highlight from all messages
             document.querySelectorAll('.message.selected').forEach(msg => {
                 msg.classList.remove('selected');
             });
@@ -4152,7 +4386,6 @@
                 showToast('Message copied to clipboard!');
                 hideMessageContextMenu();
                 
-                // Show copy success animation
                 const messageElement = document.querySelector(`[data-message-id="${selectedMessageId}"]`);
                 if (messageElement) {
                     const copySuccess = document.createElement('div');
@@ -4177,7 +4410,6 @@
             navigator.clipboard.writeText(messageText).then(() => {
                 showToast('Message copied to clipboard!');
                 
-                // Show copy success animation
                 const copySuccess = document.createElement('div');
                 copySuccess.className = 'message-copy-success';
                 copySuccess.textContent = 'Copied!';
@@ -4203,32 +4435,26 @@
                 return;
             }
             
-            // Get the full message data
             const messageElement = document.querySelector(`[data-message-id="${selectedMessageId}"]`);
             const messageText = selectedMessageText;
             
-            // Store message to forward
             messageToForward = {
                 id: selectedMessageId,
                 text: messageText,
                 type: getMessageType(messageElement)
             };
             
-            // Show forward modal
             showForwardModal();
             hideMessageContextMenu();
         };
 
         function getMessageType(messageElement) {
-            // Check if it's an image message
             if (messageElement.querySelector('.image-preview')) {
                 return 'image';
             }
-            // Check if it's a file message
             if (messageElement.querySelector('.file-message')) {
                 return 'document';
             }
-            // Default to text
             return 'text';
         }
 
@@ -4316,12 +4542,10 @@
         }
 
         function selectForwardContact(user, contactItem) {
-            // Remove selection from all contacts
             document.querySelectorAll('.search-result-item').forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Add selection to clicked contact
             contactItem.classList.add('active');
             forwardToContact = user;
             confirmForwardBtn.disabled = false;
@@ -4334,7 +4558,6 @@
             }
 
             try {
-                // Create a new chat or use existing one
                 const participants = [currentUser.uid, forwardToContact.uid].sort();
                 const chatId = participants.join('_');
                 
@@ -4343,7 +4566,6 @@
                 if (chatDoc.exists()) {
                     existingChatId = chatId;
                 } else {
-                    // Create new chat
                     await setDoc(doc(db, "chats", chatId), {
                         id: chatId,
                         participants: [currentUser.uid, forwardToContact.uid],
@@ -4368,7 +4590,6 @@
                     });
                 }
 
-                // Forward the message
                 const forwardMessageData = {
                     chatId: chatId,
                     sender: currentUser.uid,
@@ -4404,12 +4625,9 @@
             const messageElement = document.querySelector(`[data-message-id="${selectedMessageId}"]`);
             const messageText = messageElement?.dataset.messageText || '';
             
-            // Check if it's a system message (call started/ended)
             const isSystemMessage = messageElement.querySelector('.system-message');
             if (isSystemMessage) {
-                // For system messages, only allow delete for me
                 showDeleteModal(selectedMessageId, messageText);
-                // Automatically select "Delete for Me" option
                 setTimeout(() => {
                     selectDeleteOption('me');
                     confirmDelete();
@@ -4493,7 +4711,6 @@
                 console.error('Error checking chat:', error);
             }
 
-            // Load profile picture
             const profilePicture = user.profilePicture;
             const avatarStyle = profilePicture 
                 ? `background-image: url(${profilePicture}); background-size: cover; background-position: center;` 
@@ -4538,7 +4755,6 @@
             try {
                 console.log('Creating new chat with ID:', chatId);
                 
-                // Include profile picture in chat data
                 const profilePicture = await loadProfilePicture(contact.uid);
                 const profilePictures = {
                     [currentUser.uid]: userProfilePicture,
@@ -4587,20 +4803,18 @@
             input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    // Track file uploads to prevent duplicates
                     const fileKey = `${file.name}_${file.size}_${Date.now()}`;
                     if (sessionStorage.getItem(`uploaded_${fileKey}`)) {
                         showToast('This file was already sent recently', 'warning');
                         return;
                     }
                     
-                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    if (file.size > 5 * 1024 * 1024) {
                         showToast('File too large (max 5MB for direct upload). Using WebRTC for transfer.', 'warning');
                         await sendLargeFileViaDataChannel(file, file.type.startsWith('image') ? 'image' : 'video');
                     } else {
                         await sendFileAsBase64(file, file.type.startsWith('image') ? 'image' : 'video');
                         sessionStorage.setItem(`uploaded_${fileKey}`, 'true');
-                        // Clean up after 5 minutes
                         setTimeout(() => {
                             sessionStorage.removeItem(`uploaded_${fileKey}`);
                         }, 5 * 60 * 1000);
@@ -4618,20 +4832,18 @@
             input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    // Track file uploads to prevent duplicates
                     const fileKey = `${file.name}_${file.size}_${Date.now()}`;
                     if (sessionStorage.getItem(`uploaded_${fileKey}`)) {
                         showToast('This file was already sent recently', 'warning');
                         return;
                     }
                     
-                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    if (file.size > 5 * 1024 * 1024) {
                         showToast('File too large (max 5MB for direct upload). Using WebRTC for transfer.', 'warning');
                         await sendLargeFileViaDataChannel(file, 'document');
                     } else {
                         await sendFileAsBase64(file, 'document');
                         sessionStorage.setItem(`uploaded_${fileKey}`, 'true');
-                        // Clean up after 5 minutes
                         setTimeout(() => {
                             sessionStorage.removeItem(`uploaded_${fileKey}`);
                         }, 5 * 60 * 1000);
@@ -4642,23 +4854,25 @@
         };
 
         async function sendLargeFileViaDataChannel(file, fileType) {
-            if (!currentChatId || !currentContact) {
+            if (!currentChatId) {
                 showToast('Please select a chat first', 'error');
                 return;
             }
             
-            // Check if already uploading same file
             if (largeFileUpload && largeFileUpload.file.name === file.name) {
                 showToast('File is already being uploaded', 'warning');
                 return;
             }
             
-            // Show large file upload modal
             showLargeFileUploadModal(file, fileType);
             
             try {
-                const contactPeerId = await getContactPeerId(currentContact.uid);
-                if (!contactPeerId) {
+                let contactPeerId = null;
+                if (!currentGroupId && currentContact) {
+                    contactPeerId = await getContactPeerId(currentContact.uid);
+                }
+                
+                if (!contactPeerId && !currentGroupId) {
                     showToast('Contact is not available for file transfer', 'error');
                     hideLargeFileUploadModal();
                     return;
@@ -4666,7 +4880,13 @@
                 
                 console.log(`Sending large file via DataChannel: ${file.name} (${file.size} bytes)`);
                 
-                // Create WebRTC connection for file transfer
+                if (currentGroupId) {
+                    showToast('Group file sharing via WebRTC is complex. Sending via base64 instead.', 'warning');
+                    hideLargeFileUploadModal();
+                    await sendFileAsBase64(file, fileType);
+                    return;
+                }
+                
                 const conn = peer.connect(contactPeerId, {
                     reliable: true,
                     metadata: {
@@ -4696,7 +4916,6 @@
                 conn.on('open', async () => {
                     console.log('DataChannel connection opened for file transfer');
                     
-                    // Send file metadata
                     conn.send(JSON.stringify({
                         type: 'file-metadata',
                         transferId: transferId,
@@ -4710,42 +4929,34 @@
                         totalChunks: Math.ceil(file.size / (16 * 1024))
                     }));
                     
-                    // Read file and send in chunks
-                    const CHUNK_SIZE = 16 * 1024; // 16KB chunks for better performance
+                    const CHUNK_SIZE = 16 * 1024;
                     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
                     
                     pendingFileTransfers.get(transferId).totalChunks = totalChunks;
                     updateLargeFileProgress(0, 0, totalChunks);
                     
-                    // Read file as array buffer
                     const arrayBuffer = await file.arrayBuffer();
                     
-                    // Send chunks
                     for (let i = 0; i < totalChunks; i++) {
                         const start = i * CHUNK_SIZE;
                         const end = Math.min(start + CHUNK_SIZE, file.size);
                         const chunk = arrayBuffer.slice(start, end);
                         
-                        // Send chunk
                         conn.send(chunk);
                         
                         pendingFileTransfers.get(transferId).chunksSent++;
                         
-                        // Update progress
                         const progress = Math.round(((i + 1) / totalChunks) * 100);
                         updateLargeFileProgress(progress, i + 1, totalChunks);
                         
-                        // Small delay to prevent overwhelming
                         await new Promise(resolve => setTimeout(resolve, 10));
                     }
                     
-                    // Send completion message
                     conn.send(JSON.stringify({
                         type: 'file-complete',
                         transferId: transferId
                     }));
                     
-                    // Add message to chat (only once)
                     const messageData = {
                         chatId: currentChatId,
                         sender: currentUser.uid,
@@ -4761,7 +4972,6 @@
                     
                     await addDoc(collection(db, "messages"), messageData);
                     
-                    // Update chat last message
                     await updateDoc(doc(db, "chats", currentChatId), {
                         lastMessage: `📁 ${file.name}`,
                         lastMessageTime: serverTimestamp(),
@@ -4772,7 +4982,6 @@
                     hideLargeFileUploadModal();
                     showToast('File sent successfully via WebRTC!');
                     
-                    // Close connection after delay
                     setTimeout(() => {
                         if (conn.open) {
                             conn.close();
@@ -4801,36 +5010,31 @@
         }
 
         async function sendFileAsBase64(file, fileType) {
-            if (!currentChatId || !currentContact) {
+            if (!currentChatId) {
                 showToast('Please select a chat first', 'error');
                 return;
             }
             
-            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for Base64 (reduced from 10MB)
+            const MAX_FILE_SIZE = 5 * 1024 * 1024;
             if (file.size > MAX_FILE_SIZE) {
                 showToast('File size too large (max 5MB for direct upload)', 'error');
                 return;
             }
             
-            // Show progress modal
             showUploadProgress(file.name, file.size);
             
             try {
-                // Convert file to Base64
                 const base64Data = await fileToBase64(file);
                 
-                // Check if base64 data is too large for Firebase
-                if (base64Data.length > 1000000) { // 1MB Firebase limit
+                if (base64Data.length > 1000000) {
                     showToast('File too large after conversion. Using WebRTC transfer.', 'warning');
                     hideUploadProgress();
                     await sendLargeFileViaDataChannel(file, fileType);
                     return;
                 }
                 
-                // Update progress to 50%
                 updateUploadProgress(50, file.name);
                 
-                // Create message with Base64 data
                 const messageData = {
                     chatId: currentChatId,
                     sender: currentUser.uid,
@@ -4844,26 +5048,29 @@
                     delivered: false
                 };
                 
-                // Update progress to 75%
                 updateUploadProgress(75, file.name);
                 
-                // Add to Firestore
                 await addDoc(collection(db, "messages"), messageData);
                 
-                // Update progress to 100%
                 updateUploadProgress(100, file.name);
                 
-                // Update chat
                 const fileMessage = fileType === 'image' ? '📷 Photo' : 
                                   fileType === 'video' ? '🎬 Video' : '📄 Document';
-                await updateDoc(doc(db, "chats", currentChatId), {
+                
+                const updateData = {
                     lastMessage: fileMessage,
                     lastMessageTime: serverTimestamp(),
-                    sender: currentUser.uid,
-                    [`unreadCount.${currentContact.uid}`]: increment(1)
-                });
+                    sender: currentUser.uid
+                };
                 
-                // Hide progress modal after delay
+                if (currentGroupId) {
+                    updateData.readBy = [currentUser.uid];
+                } else if (currentContact) {
+                    updateData[`unreadCount.${currentContact.uid}`] = increment(1);
+                }
+                
+                await updateDoc(doc(db, "chats", currentChatId), updateData);
+                
                 setTimeout(() => {
                     hideUploadProgress();
                 }, 1000);
@@ -4878,7 +5085,6 @@
         }
 
         window.downloadLargeFile = async (transferId, fileName, fileSize, base64Data = null) => {
-            // If we have base64 data, download directly
             if (base64Data && base64Data.startsWith('data:')) {
                 await downloadFile(base64Data, fileName, 'application/octet-stream');
                 return;
@@ -4887,11 +5093,8 @@
             showLargeFileDownloadModal(fileName, fileSize);
             
             try {
-                // For now, simulate download since we need sender's peer ID
-                // In a real app, you would request the file from the sender
                 showToast('Large file download initiated. Please wait...');
                 
-                // Simulate download progress
                 let progress = 0;
                 const interval = setInterval(() => {
                     progress += 5;
@@ -4903,7 +5106,6 @@
                             hideLargeFileDownloadModal();
                             showToast('File downloaded successfully!');
                             
-                            // Create a fake blob to simulate file download
                             const fakeBlob = new Blob(['Simulated file content'], { type: 'application/octet-stream' });
                             saveFileToDevice(fakeBlob, fileName);
                         }, 500);
@@ -4946,22 +5148,27 @@
         }
 
         function base64ToBlob(base64, contentType = '') {
-            const byteCharacters = atob(base64.split(',')[1]);
-            const byteArrays = [];
-            
-            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-                const slice = byteCharacters.slice(offset, offset + 512);
-                const byteNumbers = new Array(slice.length);
+            try {
+                const byteCharacters = atob(base64.split(',')[1]);
+                const byteArrays = [];
                 
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
+                for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                    const slice = byteCharacters.slice(offset, offset + 512);
+                    const byteNumbers = new Array(slice.length);
+                    
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
                 }
                 
-                const byteArray = new Uint8Array(byteNumbers);
-                byteArrays.push(byteArray);
+                return new Blob(byteArrays, { type: contentType });
+            } catch (error) {
+                console.error('Error converting base64 to blob:', error);
+                throw error;
             }
-            
-            return new Blob(byteArrays, { type: contentType });
         }
 
         window.downloadFile = async (base64Data, fileName, fileType = '') => {
@@ -4982,7 +5189,6 @@
 
         async function saveFileToDevice(blob, fileName) {
             try {
-                // For mobile devices, use the File System Access API if available
                 if ('showSaveFilePicker' in window) {
                     try {
                         const fileHandle = await window.showSaveFilePicker({
@@ -5003,7 +5209,6 @@
                     }
                 }
                 
-                // Fallback for browsers without File System Access API
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -5011,7 +5216,6 @@
                 document.body.appendChild(a);
                 a.click();
                 
-                // Cleanup
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
@@ -5025,7 +5229,6 @@
 
         // ====== WEBRTC DATACHANNEL FILE TRANSFER HANDLERS ======
         function initializeDataChannelHandlers() {
-            // Handle incoming DataChannel connections for file transfer
             peer.on('connection', (conn) => {
                 console.log('Incoming DataChannel connection:', conn.peer);
                 
@@ -5041,7 +5244,6 @@
                 
                 conn.on('data', async (data) => {
                     try {
-                        // Check if data is JSON (metadata or control messages)
                         if (typeof data === 'string') {
                             const message = JSON.parse(data);
                             
@@ -5053,21 +5255,16 @@
                                 receivedChunks = new Array(totalChunks);
                                 receivedChunksCount = 0;
                                 
-                                // Show download modal
                                 showLargeFileDownloadModal(message.fileName, message.fileSize);
                             }
                             else if (message.type === 'file-complete') {
                                 console.log('File transfer complete');
                                 
-                                // Reconstruct file from chunks
                                 const blob = new Blob(receivedChunks, { type: fileMetadata.fileType });
                                 
-                                // Save file (but don't auto-download)
-                                // Instead, show a message that file is ready for download
                                 hideLargeFileDownloadModal();
                                 showToast('File received! Click the download button to save it.');
                                 
-                                // Add message to chat
                                 const messageData = {
                                     chatId: fileMetadata.chatId,
                                     sender: fileMetadata.senderId,
@@ -5083,7 +5280,6 @@
                                 
                                 await addDoc(collection(db, "messages"), messageData);
                                 
-                                // Update chat
                                 await updateDoc(doc(db, "chats", fileMetadata.chatId), {
                                     lastMessage: `📁 ${fileMetadata.fileName}`,
                                     lastMessageTime: serverTimestamp(),
@@ -5091,7 +5287,6 @@
                                     [`unreadCount.${currentUser.uid}`]: increment(1)
                                 });
                                 
-                                // Close connection
                                 setTimeout(() => {
                                     if (conn.open) {
                                         conn.close();
@@ -5099,14 +5294,11 @@
                                 }, 3000);
                             }
                         }
-                        // Data is ArrayBuffer (file chunk)
                         else if (data instanceof ArrayBuffer) {
                             if (fileMetadata) {
-                                // Store chunk
                                 receivedChunks[receivedChunksCount] = data;
                                 receivedChunksCount++;
                                 
-                                // Update progress
                                 const progress = Math.round((receivedChunksCount / totalChunks) * 100);
                                 updateDownloadProgress(progress, receivedChunksCount, totalChunks);
                             }
@@ -5143,10 +5335,7 @@
             locationPickerModal.classList.add('active');
             locationPickerActive = true;
             
-            // Try to get current location with high accuracy
             useCurrentLocation();
-            
-            // Initialize satellite view
             initSatelliteView();
         }
 
@@ -5159,7 +5348,6 @@
                 </div>
             `;
             
-            // After a delay, simulate satellite view
             setTimeout(() => {
                 const satelliteView = document.getElementById('satelliteView');
                 satelliteView.innerHTML = `
@@ -5220,7 +5408,6 @@
                     const { latitude, longitude, accuracy } = position.coords;
                     currentLocation = { latitude, longitude, accuracy };
                     
-                    // Update accuracy info
                     const accuracyInfo = document.getElementById('accuracyInfo');
                     if (!accuracyInfo) {
                         const satelliteView = document.getElementById('satelliteView');
@@ -5237,7 +5424,6 @@
                         `;
                     }
                     
-                    // Try to get address from coordinates
                     try {
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
                         const data = await response.json();
@@ -5245,7 +5431,6 @@
                         if (data.display_name) {
                             locationSearch.value = data.display_name;
                             
-                            // Update satellite view with address
                             const addressElement = document.getElementById('satelliteAddress');
                             if (!addressElement) {
                                 const satelliteView = document.getElementById('satelliteView');
@@ -5264,8 +5449,6 @@
                     }
                     
                     showToast('Location found!');
-                    
-                    // Update marker position
                     updateLocationMarker(latitude, longitude);
                 },
                 (error) => {
@@ -5273,7 +5456,6 @@
                     showToast('Unable to get your location', 'error');
                     locationSearch.value = 'Location not available';
                     
-                    // For demo, use a default location
                     if (error.code === error.PERMISSION_DENIED) {
                         currentLocation = { latitude: 40.7128, longitude: -74.0060, accuracy: 100 };
                         locationSearch.value = 'New York, NY, USA';
@@ -5291,7 +5473,6 @@
         function updateLocationMarker(lat, lng) {
             const marker = document.querySelector('.location-marker');
             if (marker) {
-                // Animate marker
                 marker.style.animation = 'none';
                 setTimeout(() => {
                     marker.style.animation = 'bounce 0.5s ease';
@@ -5305,7 +5486,7 @@
                 return;
             }
             
-            if (!currentChatId || !currentContact) {
+            if (!currentChatId) {
                 showToast('Please select a chat first', 'error');
                 return;
             }
@@ -5327,12 +5508,19 @@
                 
                 await addDoc(collection(db, "messages"), locationData);
                 
-                await updateDoc(doc(db, "chats", currentChatId), {
+                const updateData = {
                     lastMessage: '📍 Location',
                     lastMessageTime: serverTimestamp(),
-                    sender: currentUser.uid,
-                    [`unreadCount.${currentContact.uid}`]: increment(1)
-                });
+                    sender: currentUser.uid
+                };
+                
+                if (currentGroupId) {
+                    updateData.readBy = [currentUser.uid];
+                } else if (currentContact) {
+                    updateData[`unreadCount.${currentContact.uid}`] = increment(1);
+                }
+                
+                await updateDoc(doc(db, "chats", currentChatId), updateData);
                 
                 closeLocationPicker();
                 showToast('Location shared successfully!');
@@ -5372,11 +5560,9 @@
                 mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     
-                    // Convert voice to Base64
                     const base64Data = await fileToBase64(audioBlob);
                     
-                    // Check file size before sending
-                    if (base64Data.length > 1000000) { // 1MB limit
+                    if (base64Data.length > 1000000) {
                         showToast('Voice message too long. Please record a shorter message.', 'error');
                         stream.getTracks().forEach(track => track.stop());
                         micButton.style.display = 'block';
@@ -5385,7 +5571,6 @@
                         return;
                     }
                     
-                    // Create voice message
                     const messageData = {
                         chatId: currentChatId,
                         sender: currentUser.uid,
@@ -5399,12 +5584,19 @@
                     
                     await addDoc(collection(db, "messages"), messageData);
                     
-                    await updateDoc(doc(db, "chats", currentChatId), {
+                    const updateData = {
                         lastMessage: '🎤 Voice message',
                         lastMessageTime: serverTimestamp(),
-                        sender: currentUser.uid,
-                        [`unreadCount.${currentContact.uid}`]: increment(1)
-                    });
+                        sender: currentUser.uid
+                    };
+                    
+                    if (currentGroupId) {
+                        updateData.readBy = [currentUser.uid];
+                    } else if (currentContact) {
+                        updateData[`unreadCount.${currentContact.uid}`] = increment(1);
+                    }
+                    
+                    await updateDoc(doc(db, "chats", currentChatId), updateData);
                     
                     stream.getTracks().forEach(track => track.stop());
                     
@@ -5453,6 +5645,66 @@
             return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
 
+        // ====== CAMERA TOGGLE FUNCTION ======
+        window.toggleCamera = async () => {
+            if (!localStream || !isInCall || currentCallType !== 'video') {
+                return;
+            }
+            
+            try {
+                // Stop current video tracks
+                localStream.getVideoTracks().forEach(track => track.stop());
+                
+                // Get available cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (videoDevices.length < 2) {
+                    showToast('Only one camera available', 'warning');
+                    return;
+                }
+                
+                // Switch camera
+                currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+                const constraints = {
+                    video: { facingMode: currentCamera },
+                    audio: true
+                };
+                
+                const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Replace the video track in the local stream
+                const newVideoTrack = newStream.getVideoTracks()[0];
+                const sender = activeCall.peerConnection.getSenders().find(s => 
+                    s.track && s.track.kind === 'video'
+                );
+                
+                if (sender) {
+                    sender.replaceTrack(newVideoTrack);
+                }
+                
+                // Update local video display
+                localVideo.srcObject = newStream;
+                
+                // Replace old video track with new one in localStream
+                const oldVideoTrack = localStream.getVideoTracks()[0];
+                localStream.removeTrack(oldVideoTrack);
+                localStream.addTrack(newVideoTrack);
+                
+                showToast(`Switched to ${currentCamera === 'user' ? 'front' : 'back'} camera`);
+                
+                // Update camera toggle icon
+                const cameraToggleIcon = document.getElementById('cameraToggleIcon');
+                if (cameraToggleIcon) {
+                    cameraToggleIcon.className = currentCamera === 'user' ? 'fas fa-camera' : 'fas fa-camera-rotate';
+                }
+                
+            } catch (error) {
+                console.error('Error toggling camera:', error);
+                showToast('Failed to switch camera', 'error');
+            }
+        };
+
         // ====== PEERJS CALLING FUNCTIONS ======
         function initializePeer() {
             if (!currentUser) return;
@@ -5494,7 +5746,6 @@
                 await savePeerId(id);
                 updateNetworkStatus(true, 'Connected to P2P network');
                 
-                // Initialize DataChannel handlers
                 initializeDataChannelHandlers();
             });
             
@@ -5510,7 +5761,6 @@
                     showToast('Your browser does not support WebRTC', 'error');
                 }
                 
-                // Attempt to reconnect on network errors
                 if (err.type === 'disconnected' || err.type === 'server-error') {
                     console.log('Attempting to reconnect to PeerJS...');
                     setTimeout(() => {
@@ -5536,7 +5786,6 @@
             peer.on('call', (call) => {
                 console.log('📞 Incoming call received from:', call.peer);
                 
-                // Store call data immediately
                 const metadata = call.metadata || {};
                 incomingCallData = {
                     call: call,
@@ -5546,7 +5795,6 @@
                     timestamp: Date.now()
                 };
                 
-                // Handle the incoming call
                 handleIncomingCall(call);
             });
         }
@@ -5582,7 +5830,6 @@
                 console.error('❌ Error getting contact peer ID:', error);
             }
             
-            // If no peer ID found, try to refresh by updating the contact's status
             try {
                 await updateDoc(doc(db, "users", contactId), {
                     online: false,
@@ -5602,6 +5849,11 @@
         async function startCall(type) {
             if (!currentContact) {
                 showToast('Please select a contact first', 'error');
+                return;
+            }
+            
+            if (currentGroupId) {
+                showToast('Group calls are not supported yet', 'warning');
                 return;
             }
             
@@ -5651,7 +5903,6 @@
                     timestamp: Date.now()
                 };
                 
-                // Load profile picture for outgoing call avatar
                 const profilePic = await loadProfilePicture(currentContact.uid);
                 if (profilePic) {
                     outgoingCallAvatar.style.backgroundImage = `url(${profilePic})`;
@@ -5682,33 +5933,35 @@
                     startTime: Date.now()
                 };
                 
-                // Set up call event handlers
                 call.on('stream', (stream) => {
                     console.log('✅ Call connected, received remote stream');
                     remoteStream = stream;
                     
-                    // Close outgoing modal
                     outgoingCallModal.classList.remove('active');
                     
                     if (type === 'video') {
                         remoteVideo.srcObject = stream;
                         remoteVideoContainer.style.display = 'block';
                         callContactInfo.style.display = 'none';
+                        
+                        // Show camera toggle button for video calls
+                        cameraToggleBtn.style.display = 'flex';
+                        floatingCameraToggle.style.display = 'flex';
                     } else {
                         remoteAudio.srcObject = stream;
+                        cameraToggleBtn.style.display = 'none';
+                        floatingCameraToggle.style.display = 'none';
                     }
                     
                     if (type === 'audio') {
                         callInterface.classList.add('audio-call-interface');
                     }
                     
-                    // Start call interface
                     callAvatar.textContent = currentContact.name.charAt(0);
                     callStatus.textContent = 'Connected';
                     callInterface.classList.add('active');
                     startCallTimer();
                     
-                    // Send call notification
                     sendCallNotification('connected');
                 });
                 
@@ -5722,16 +5975,14 @@
                     handleCallError(err);
                 });
                 
-                // Set timeout for no answer
                 outgoingCallTimeout = setTimeout(() => {
                     if (outgoingCallModal.classList.contains('active')) {
                         console.log('⏰ Call timeout, no answer');
                         showToast('Call timed out. No answer.', 'error');
                         handleCallEnded();
                     }
-                }, 45000); // 45 seconds timeout
+                }, 45000);
                 
-                // Also send a call notification via Firestore for reliability
                 await sendCallNotification('ringing');
                 
             } catch (error) {
@@ -5749,7 +6000,6 @@
             const callerName = metadata.callerName || 'Unknown';
             const callType = metadata.callType || 'audio';
             
-            // Store call data
             incomingCallData = {
                 call: call,
                 callerId: callerId,
@@ -5760,7 +6010,6 @@
             
             console.log('Incoming call data:', incomingCallData);
             
-            // Load profile picture for incoming call
             loadProfilePicture(callerId).then(profilePic => {
                 if (profilePic) {
                     incomingCallAvatar.style.backgroundImage = `url(${profilePic})`;
@@ -5775,20 +6024,16 @@
             incomingCallType.textContent = callType === 'video' ? 'Video Call' : 'Voice Call';
             incomingCallModal.classList.add('active');
             
-            // Trigger vibration for incoming call
             triggerVibration();
         }
 
         function triggerVibration() {
-            // Trigger vibration if supported
             if ('vibrate' in navigator) {
-                // Vibrate pattern: vibrate for 500ms, pause for 500ms
                 navigator.vibrate([500, 500, 500, 500]);
             }
         }
 
         function stopVibration() {
-            // Stop vibration
             if ('vibrate' in navigator) {
                 navigator.vibrate(0);
             }
@@ -5817,7 +6062,6 @@
             
             console.log('✅ Accepting call from:', incomingCallData.callerName);
             
-            // Stop vibration immediately when accepting call
             stopVibration();
             incomingCallModal.classList.remove('active');
             
@@ -5841,8 +6085,14 @@
                         remoteVideo.srcObject = stream;
                         remoteVideoContainer.style.display = 'block';
                         callContactInfo.style.display = 'none';
+                        
+                        // Show camera toggle button for video calls
+                        cameraToggleBtn.style.display = 'flex';
+                        floatingCameraToggle.style.display = 'flex';
                     } else {
                         remoteAudio.srcObject = stream;
+                        cameraToggleBtn.style.display = 'none';
+                        floatingCameraToggle.style.display = 'none';
                     }
                     
                     if (incomingCallData.callType === 'audio') {
@@ -5868,7 +6118,6 @@
                     name: incomingCallData.callerName 
                 };
                 
-                // Load profile picture for call avatar
                 const profilePic = await loadProfilePicture(incomingCallData.callerId);
                 if (profilePic) {
                     callAvatar.style.backgroundImage = `url(${profilePic})`;
@@ -5901,7 +6150,6 @@
         window.rejectCall = () => {
             console.log('❌ Rejecting call');
             
-            // Stop vibration immediately when rejecting call
             stopVibration();
             
             if (incomingCallData && incomingCallData.call) {
@@ -5915,7 +6163,6 @@
             incomingCallModal.classList.remove('active');
             incomingCallData = null;
             
-            // Send rejection notification
             if (currentChatId) {
                 sendCallNotification('rejected');
             }
@@ -5951,7 +6198,6 @@
                 localStream = null;
             }
             
-            // Send cancellation notification
             if (currentContact) {
                 sendCallNotification('cancelled');
             }
@@ -5962,18 +6208,15 @@
         function handleCallEnded() {
             console.log('Handling call ended');
             
-            // Clear outgoing call timeout
             if (outgoingCallTimeout) {
                 clearTimeout(outgoingCallTimeout);
                 outgoingCallTimeout = null;
             }
             
-            // Close all call modals
             outgoingCallModal.classList.remove('active');
             incomingCallModal.classList.remove('active');
             callInterface.classList.remove('active');
             
-            // Stop media streams
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
@@ -5984,7 +6227,6 @@
                 remoteStream = null;
             }
             
-            // Reset call state
             if (activeCall) {
                 try {
                     activeCall.close();
@@ -5994,40 +6236,37 @@
                 activeCall = null;
             }
             
-            // Reset audio/video
             remoteAudio.srcObject = null;
             remoteVideo.srcObject = null;
             localVideo.srcObject = null;
             
-            // Hide video containers
             remoteVideoContainer.style.display = 'none';
             localVideoContainer.style.display = 'none';
             callContactInfo.style.display = 'block';
             
-            // Stop timer
+            // Hide camera toggle buttons
+            cameraToggleBtn.style.display = 'none';
+            floatingCameraToggle.style.display = 'none';
+            
             if (callTimer) {
                 clearInterval(callTimer);
                 callTimer = null;
             }
             
-            // Stop vibration
             stopVibration();
             
-            // Reset states
             isInCall = false;
             isMuted = false;
             isVideoOff = false;
             callInitiator = false;
+            currentCamera = 'user';
             
-            // Reset UI icons
             document.getElementById('muteIcon').className = 'fas fa-microphone-slash';
             document.getElementById('videoIcon').className = 'fas fa-video-slash';
             
-            // Clear call data
             incomingCallData = null;
             outgoingCallData = null;
             
-            // Send call ended notification if we were in a call
             if (currentContact && callStartTime) {
                 sendCallNotification('ended');
             }
@@ -6089,7 +6328,7 @@
                     text: callMessage,
                     timestamp: serverTimestamp(),
                     type: "system",
-                    canDeleteForEveryone: true // Flag for system messages
+                    canDeleteForEveryone: true
                 });
                 
                 console.log('📝 Call notification sent:', callMessage);
@@ -6129,6 +6368,160 @@
             showToast(isVideoOff ? 'Camera turned off' : 'Camera turned on');
         };
 
+        // ====== GROUP CHAT FUNCTIONS ======
+        window.showNewGroupModal = () => {
+            groupCreationModal.classList.add('active');
+            selectedGroupMembers.clear();
+            groupNameInput.value = '';
+            loadGroupMembers();
+        };
+
+        window.closeGroupCreationModal = () => {
+            groupCreationModal.classList.remove('active');
+            selectedGroupMembers.clear();
+            groupNameInput.value = '';
+            groupMembersList.innerHTML = '';
+        };
+
+        async function loadGroupMembers() {
+            groupMembersList.innerHTML = '<div class="spinner"></div>';
+            
+            try {
+                const usersQuery = query(collection(db, "users"));
+                const snapshot = await getDocs(usersQuery);
+                
+                if (snapshot.empty) {
+                    groupMembersList.innerHTML = `
+                        <div class="no-results" style="padding: 20px;">
+                            <p>No contacts found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                groupMembersList.innerHTML = '';
+                
+                snapshot.forEach((userDoc) => {
+                    const user = userDoc.data();
+                    
+                    if (user.uid === currentUser.uid) return;
+                    
+                    renderGroupMember(user);
+                });
+
+            } catch (error) {
+                console.error('Error loading group members:', error);
+                groupMembersList.innerHTML = `
+                    <div class="no-results" style="padding: 20px;">
+                        <p>Error loading contacts</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderGroupMember(user) {
+            const profilePicture = user.profilePicture;
+            const avatarStyle = profilePicture 
+                ? `background-image: url(${profilePicture}); background-size: cover; background-position: center;` 
+                : `background-color: ${user.avatarColor || '#25D366'}`;
+            
+            const avatarContent = profilePicture ? '' : user.name.charAt(0).toUpperCase();
+
+            const memberItem = document.createElement('div');
+            memberItem.className = 'group-member-select';
+            memberItem.dataset.userId = user.uid;
+            memberItem.onclick = () => toggleGroupMember(user.uid, memberItem);
+
+            memberItem.innerHTML = `
+                <input type="checkbox" class="group-member-checkbox" ${selectedGroupMembers.has(user.uid) ? 'checked' : ''}>
+                <div class="chat-avatar" style="width: 40px; height: 40px; ${avatarStyle}">
+                    ${avatarContent}
+                </div>
+                <div class="search-result-info">
+                    <div class="search-result-name">${user.name}</div>
+                    <div class="search-result-email">${user.email}</div>
+                </div>
+            `;
+
+            groupMembersList.appendChild(memberItem);
+        }
+
+        function toggleGroupMember(userId, memberItem) {
+            if (selectedGroupMembers.has(userId)) {
+                selectedGroupMembers.delete(userId);
+                memberItem.classList.remove('selected');
+            } else {
+                selectedGroupMembers.add(userId);
+                memberItem.classList.add('selected');
+            }
+            
+            const checkbox = memberItem.querySelector('.group-member-checkbox');
+            checkbox.checked = selectedGroupMembers.has(userId);
+            
+            updateGroupCreationButton();
+        }
+
+        function updateGroupCreationButton() {
+            if (groupNameInput.value.trim() && selectedGroupMembers.size > 0) {
+                createGroupBtn.disabled = false;
+            } else {
+                createGroupBtn.disabled = true;
+            }
+        }
+
+        groupNameInput.addEventListener('input', updateGroupCreationButton);
+
+        window.createNewGroup = async () => {
+            const groupName = groupNameInput.value.trim();
+            
+            if (!groupName) {
+                showToast('Please enter a group name', 'error');
+                return;
+            }
+            
+            if (selectedGroupMembers.size === 0) {
+                showToast('Please select at least one member', 'error');
+                return;
+            }
+            
+            try {
+                const groupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const participants = [currentUser.uid, ...Array.from(selectedGroupMembers)];
+                
+                await setDoc(doc(db, "chats", groupId), {
+                    id: groupId,
+                    isGroup: true,
+                    groupName: groupName,
+                    participants: participants,
+                    createdBy: currentUser.uid,
+                    createdAt: serverTimestamp(),
+                    lastMessage: '',
+                    lastMessageTime: serverTimestamp(),
+                    readBy: [currentUser.uid],
+                    typing: {},
+                    unreadCount: {},
+                    avatarColor: getRandomColor()
+                });
+
+                await addDoc(collection(db, "messages"), {
+                    chatId: groupId,
+                    sender: "system",
+                    text: `${await getUserName(currentUser.uid)} created group "${groupName}"`,
+                    timestamp: serverTimestamp(),
+                    type: "system"
+                });
+
+                closeGroupCreationModal();
+                showToast('Group created successfully!');
+                
+                loadChats();
+                
+            } catch (error) {
+                console.error('Error creating group:', error);
+                showToast('Failed to create group. Please try again.', 'error');
+            }
+        };
+
         // ====== PROFILE FUNCTIONS ======
         window.showProfileModal = () => {
             profileModal.classList.add('active');
@@ -6166,7 +6559,6 @@
                 profileNameText.textContent = newName;
                 profileEmailText.textContent = newEmail || currentUser.email;
                 
-                // Update avatar text
                 if (!userProfilePicture) {
                     userAvatar.textContent = newName.charAt(0).toUpperCase();
                     profileAvatarText.textContent = newName.charAt(0).toUpperCase();
@@ -6175,7 +6567,6 @@
                 cancelProfileEdit();
                 showToast('Profile updated successfully!');
                 
-                // Update chat list
                 loadChats();
                 
             } catch (error) {
@@ -6194,7 +6585,6 @@
                     profileNameText.textContent = userData.name || currentUser.email.split('@')[0];
                     profileEmailText.textContent = userData.email || currentUser.email;
                     
-                    // Load profile picture
                     if (userData.profilePicture) {
                         userProfilePicture = userData.profilePicture;
                         updateProfilePicture(userData.profilePicture);
@@ -6253,7 +6643,7 @@
         };
         
         async function handleProfilePictureUpload(file) {
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            if (file.size > 2 * 1024 * 1024) {
                 showToast('Profile picture must be less than 2MB', 'error');
                 return;
             }
@@ -6262,13 +6652,11 @@
                 const base64Data = await fileToBase64(file);
                 userProfilePicture = base64Data;
                 
-                // Save to Firestore
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     profilePicture: base64Data,
                     profilePictureUpdated: serverTimestamp()
                 });
                 
-                // Update UI
                 updateProfilePicture(base64Data);
                 
                 showToast('Profile picture updated!');
@@ -6280,7 +6668,6 @@
         }
         
         function updateProfilePicture(base64Data) {
-            // Update user avatar
             if (userAvatar) {
                 if (base64Data) {
                     userAvatar.style.backgroundImage = `url(${base64Data})`;
@@ -6292,7 +6679,6 @@
                 }
             }
             
-            // Update profile modal avatar
             if (profileAvatarLarge) {
                 if (base64Data) {
                     profileAvatarLarge.style.backgroundImage = `url(${base64Data})`;
@@ -6375,14 +6761,10 @@
 
                 const messageData = messageDoc.data();
                 
-                // Check if current user is the sender
                 const isSender = messageData.sender === currentUser.uid;
-                
-                // Check if it's a system message that can be deleted for everyone
                 const isSystemMessage = messageData.type === 'system' && messageData.canDeleteForEveryone;
                 
                 if (deleteOption === 'everyone') {
-                    // Allow deleting for everyone if user is the sender OR it's a deletable system message
                     if (!isSender && !isSystemMessage) {
                         showToast('You can only delete your own messages for everyone', 'error');
                         deleteModal.classList.remove('active');
@@ -6391,7 +6773,6 @@
                     
                     await deleteDoc(doc(db, "messages", messageToDelete));
                     
-                    // Update chat last message if needed
                     const chatDoc = await getDoc(doc(db, "chats", currentChatId));
                     if (chatDoc.exists()) {
                         const chatData = chatDoc.data();
@@ -6436,19 +6817,14 @@
                     }
                     
                 } else if (deleteOption === 'me') {
-                    // User can delete any message for themselves
                     await updateDoc(doc(db, "messages", messageToDelete), {
                         deletedFor: arrayUnion(currentUser.uid)
                     });
                 }
 
-                // Close modal immediately
                 deleteModal.classList.remove('active');
-                
-                // Show success message
                 showToast(`Message deleted ${deleteOption === 'everyone' ? 'for everyone' : 'for you'}`);
                 
-                // Reset state after a short delay
                 setTimeout(() => {
                     messageToDelete = null;
                     deleteOption = null;
@@ -6472,7 +6848,6 @@
             if (!chatToDelete) return;
             
             try {
-                // Only delete messages for the current user (soft delete)
                 const messagesQuery = query(
                     collection(db, "messages"),
                     where("chatId", "==", chatToDelete)
@@ -6491,7 +6866,6 @@
                 
                 await Promise.all(updatePromises);
                 
-                // Remove chat from user's view (soft delete)
                 const chatDoc = await getDoc(doc(db, "chats", chatToDelete));
                 if (chatDoc.exists()) {
                     await updateDoc(doc(db, "chats", chatToDelete), {
@@ -6502,6 +6876,7 @@
                 if (currentChatId === chatToDelete) {
                     currentChatId = null;
                     currentContact = null;
+                    currentGroupId = null;
                     contactName.textContent = 'Select a chat';
                     contactStatus.textContent = 'Click on a chat to start messaging';
                     contactAvatar.textContent = 'C';
@@ -6585,7 +6960,6 @@
         }
 
         function showToast(message, type = 'success') {
-            // Remove existing toast
             const existingToast = document.querySelector('.toast-notification');
             if (existingToast) {
                 existingToast.remove();
@@ -6625,7 +6999,7 @@
         }
 
         async function markMessagesAsRead() {
-            if (!currentChatId || !currentUser || !currentContact) return;
+            if (!currentChatId || !currentUser) return;
             
             try {
                 await updateDoc(doc(db, "chats", currentChatId), {
@@ -6647,12 +7021,24 @@
             onSnapshot(typingQuery, (snapshot) => {
                 snapshot.forEach((docSnapshot) => {
                     const chat = docSnapshot.data();
-                    const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-                    
-                    if (otherUserId && chat.typing && chat.typing[otherUserId] && currentChatId === docSnapshot.id) {
-                        showTypingIndicator(otherUserId);
-                    } else if (currentChatId === docSnapshot.id) {
-                        hideTypingIndicator();
+                    if (chat.isGroup && currentGroupId === docSnapshot.id) {
+                        const typingUsers = Object.keys(chat.typing || {}).filter(id => 
+                            id !== currentUser.uid && chat.typing[id]
+                        );
+                        
+                        if (typingUsers.length > 0) {
+                            showGroupTypingIndicator(typingUsers);
+                        } else {
+                            hideTypingIndicator();
+                        }
+                    } else {
+                        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+                        
+                        if (otherUserId && chat.typing && chat.typing[otherUserId] && currentChatId === docSnapshot.id) {
+                            showTypingIndicator(otherUserId);
+                        } else if (currentChatId === docSnapshot.id) {
+                            hideTypingIndicator();
+                        }
                     }
                 });
             });
@@ -6681,6 +7067,45 @@
             }, 100);
         }
 
+        async function showGroupTypingIndicator(userIds) {
+            hideTypingIndicator();
+            
+            const userNames = [];
+            for (const userId of userIds.slice(0, 2)) {
+                const userName = await getUserName(userId);
+                userNames.push(userName);
+            }
+            
+            let typingText = '';
+            if (userNames.length === 1) {
+                typingText = `${userNames[0]} is typing...`;
+            } else if (userNames.length === 2) {
+                typingText = `${userNames[0]} and ${userNames[1]} are typing...`;
+            } else {
+                typingText = `${userNames[0]} and ${userIds.length - 1} others are typing...`;
+            }
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <span style="margin-left: 8px; font-size: 12px; color: #8696a0;">${typingText}</span>
+            `;
+            
+            const messageRow = document.createElement('div');
+            messageRow.className = 'message-row received';
+            messageRow.appendChild(typingDiv);
+            
+            messagesContainer.appendChild(messageRow);
+            
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+
         function hideTypingIndicator() {
             const existingIndicator = document.getElementById('typingIndicator');
             if (existingIndicator) {
@@ -6693,7 +7118,6 @@
             uploadProgressFill.style.width = '0%';
             uploadProgressText.textContent = '0%';
             
-            // Show warning for large files
             const warningElement = document.getElementById('uploadFileWarning');
             if (fileSize > 2 * 1024 * 1024) {
                 warningElement.style.display = 'flex';
@@ -6736,7 +7160,6 @@
         }
 
         window.cancelLargeFileUpload = () => {
-            // Cancel all pending file transfers
             pendingFileTransfers.forEach((transfer, transferId) => {
                 if (transfer.conn && transfer.conn.open) {
                     transfer.conn.close();
@@ -6820,10 +7243,8 @@
                     });
                 }
                 
-                // End any active calls
                 handleCallEnded();
                 
-                // Close all modals
                 incomingCallModal.classList.remove('active');
                 outgoingCallModal.classList.remove('active');
                 profileModal.classList.remove('active');
@@ -6831,6 +7252,7 @@
                 profileUploadModal.classList.remove('active');
                 locationPickerModal.classList.remove('active');
                 forwardModal.classList.remove('active');
+                groupCreationModal.classList.remove('active');
                 hideUploadProgress();
                 hideLargeFileUploadModal();
                 hideLargeFileDownloadModal();
@@ -6849,7 +7271,6 @@
                     peer = null;
                 }
                 
-                // Close all connections
                 activeCallConnections.forEach(conn => {
                     try {
                         conn.close();
@@ -6871,10 +7292,10 @@
                 
                 await signOut(auth);
                 
-                // Reset all state
                 currentUser = null;
                 currentChatId = null;
                 currentContact = null;
+                currentGroupId = null;
                 messageToDelete = null;
                 deleteOption = null;
                 currentMessageData = null;
@@ -6889,8 +7310,8 @@
                 locationPickerActive = false;
                 messageToForward = null;
                 forwardToContact = null;
+                selectedGroupMembers.clear();
                 
-                // Reset UI
                 chatList.innerHTML = `
                     <div class="empty-chat">
                         <div class="empty-chat-icon">
@@ -6977,30 +7398,10 @@
             emojiPickerContainer.classList.remove('active');
         };
 
-        // ====== GROUP CHAT IMPLEMENTATION ======
-        window.showNewGroupModal = () => {
-            showToast('Group chat feature coming soon!', 'warning');
-            
-            // Basic group chat implementation
-            const groupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const groupName = `Group Chat ${new Date().getDate()}/${new Date().getMonth() + 1}`;
-            
-            // For now, just show a toast notification
-            // In a full implementation, you would:
-            // 1. Create a modal for selecting group members
-            // 2. Create a group chat document in Firestore
-            // 3. Add all selected members as participants
-            // 4. Create a system message
-            // 5. Open the group chat
-            
-            showToast(`Creating new group: ${groupName}`);
-        };
-
         // ====== INITIALIZATION ======
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 WebChat App initialized');
             
-            // Add swipe gestures for mobile
             let touchStartX = 0;
             let touchStartY = 0;
             
@@ -7016,10 +7417,8 @@
                 const diffX = touchEndX - touchStartX;
                 const diffY = touchEndY - touchStartY;
                 
-                // Horizontal swipe (for mobile navigation)
                 if (Math.abs(diffX) > 50 && Math.abs(diffY) < 50) {
                     if (diffX > 0 && window.innerWidth <= 768 && chatArea.classList.contains('active')) {
-                        // Swipe right - show chat list
                         showChatList();
                     }
                 }
@@ -7061,7 +7460,6 @@
                 activeFileTransfers.clear();
                 chatCache.clear();
                 
-                // Close all connections
                 activeCallConnections.forEach(conn => {
                     try {
                         conn.close();
@@ -7070,7 +7468,6 @@
                     }
                 });
                 
-                // Close pending file transfers
                 pendingFileTransfers.forEach((transfer, transferId) => {
                     if (transfer.conn && transfer.conn.open) {
                         transfer.conn.close();
@@ -7079,28 +7476,23 @@
                 pendingFileTransfers.clear();
             });
             
-            // Close menus when clicking outside
             document.addEventListener('click', (e) => {
-                // Close emoji picker
                 if (!emojiPickerContainer.contains(e.target) && !emojiButton.contains(e.target)) {
                     emojiPickerContainer.classList.remove('active');
                 }
                 
-                // Close attachment menu
                 if (!attachmentMenu.contains(e.target) && !attachmentButton.contains(e.target)) {
                     attachmentMenu.classList.remove('active');
                 }
                 
-                // Close menu dropdown
                 if (!menuDropdown.contains(e.target) && !menuToggle.contains(e.target)) {
                     menuDropdown.classList.remove('active');
                 }
                 
-                // Close modals when clicking on overlay
                 const modals = [
                     deleteModal, deleteChatModal, profileModal, 
                     profileUploadModal, locationPickerModal,
-                    largeFileDownloadModal, forwardModal
+                    largeFileDownloadModal, forwardModal, groupCreationModal
                 ];
                 
                 modals.forEach(modal => {
@@ -7109,58 +7501,48 @@
                     }
                 });
                 
-                // Close upload progress if clicking outside
                 if (uploadProgressModal.style.display === 'block' && !uploadProgressModal.contains(e.target)) {
                     hideUploadProgress();
                 }
                 
-                // Close large file upload if clicking outside
                 if (largeFileUploadModal.style.display === 'block' && !largeFileUploadModal.contains(e.target)) {
                     cancelLargeFileUpload();
                 }
                 
-                // Close message context menu
                 if (!messageContextMenu.contains(e.target) && messageContextMenuActive) {
                     hideMessageContextMenu();
                 }
             });
 
-            // Handle escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    // Close all modals
                     const modals = [
                         deleteModal, deleteChatModal, profileModal, 
                         profileUploadModal, locationPickerModal,
                         incomingCallModal, outgoingCallModal, largeFileDownloadModal,
-                        forwardModal
+                        forwardModal, groupCreationModal
                     ];
                     
                     modals.forEach(modal => modal.classList.remove('active'));
                     
-                    // Close menus
                     emojiPickerContainer.classList.remove('active');
                     attachmentMenu.classList.remove('active');
                     menuDropdown.classList.remove('active');
                     hideMessageContextMenu();
                     
-                    // Hide progress modals
                     hideUploadProgress();
                     hideLargeFileUploadModal();
                     
-                    // Close location picker
                     if (locationPickerActive) {
                         closeLocationPicker();
                     }
                     
-                    // End call if in call
                     if (isInCall) {
                         endCall();
                     }
                 }
             });
 
-            // Handle orientation changes
             window.addEventListener('orientationchange', () => {
                 setTimeout(() => {
                     if (messagesContainer) {
@@ -7169,7 +7551,6 @@
                 }, 300);
             });
 
-            // Handle resize
             window.addEventListener('resize', () => {
                 if (window.innerWidth > 768) {
                     sidebar.classList.remove('hidden');
@@ -7181,7 +7562,6 @@
                 }
             });
 
-            // Debug: Toggle performance overlay with Ctrl+Shift+P
             document.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.shiftKey && e.key === 'P') {
                     performanceOverlay.style.display = performanceOverlay.style.display === 'block' ? 'none' : 'block';
