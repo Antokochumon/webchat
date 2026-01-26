@@ -1718,6 +1718,28 @@
             font-size: clamp(14px, 3.5vw, 15px);
         }
 
+        .message-link {
+            color: #53bdeb;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
+        .message-link:hover {
+            color: #25d366;
+        }
+
+        .youtube-preview {
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .youtube-preview iframe {
+            border-radius: 8px;
+            border: none;
+        }
+
         .message-time {
             font-size: clamp(10px, 2.5vw, 11px);
             color: rgba(255, 255, 255, 0.6);
@@ -1726,6 +1748,10 @@
             align-items: center;
             justify-content: flex-end;
             gap: 4px;
+        }
+
+        .blue-tick {
+            color: #53bdeb;
         }
 
         .message-context-menu {
@@ -5517,7 +5543,7 @@
                     </div>
                 `;
             } else {
-                messageContent = `<div class="message-content">${currentGroupId && message.sender !== currentUser.uid ? `<div class="group-sender-name" style="color: ${message.senderColor || '#53bdeb'}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">${escapeHtml(message.senderName || 'Unknown')}</div>` : ''}${escapeHtml(message.text)}</div>`;
+                messageContent = `<div class="message-content">${currentGroupId && message.sender !== currentUser.uid ? `<div class="group-sender-name" style="color: ${message.senderColor || '#53bdeb'}; font-size: 12px; font-weight: bold; margin-bottom: 2px;">${escapeHtml(message.senderName || 'Unknown')}</div>` : ''}${processMessageText(message.text)}</div>`;
             }
 
             messageDiv.innerHTML = `
@@ -5564,6 +5590,15 @@
             messageDiv.dataset.text = message.text || '';
             messageDiv.dataset.type = message.type || 'text';
             messageDiv.dataset.sender = message.sender || '';
+            messageDiv.dataset.content = message.content || '';
+            messageDiv.dataset.fileName = message.fileName || '';
+            messageDiv.dataset.fileSize = message.fileSize || '';
+            messageDiv.dataset.fileType = message.fileType || '';
+            messageDiv.dataset.address = message.address || '';
+            messageDiv.dataset.latitude = message.latitude || '';
+            messageDiv.dataset.longitude = message.longitude || '';
+            messageDiv.dataset.duration = message.duration || '';
+            messageDiv.dataset.transferId = message.transferId || '';
 
             messageRow.appendChild(messageDiv);
             messagesContainer.appendChild(messageRow);
@@ -5643,6 +5678,18 @@
                 showToast('Failed to send message. Please try again.', 'error');
             }
         };
+
+        async function handleImagePaste(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+
+            try {
+                await sendFileAsBase64(file, 'image');
+                showToast('Image pasted and sent!');
+            } catch (error) {
+                console.error('Error handling image paste:', error);
+                showToast('Failed to paste image', 'error');
+            }
+        }
 
         window.handleKeyPress = (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -8243,6 +8290,45 @@
             return div.innerHTML;
         }
 
+        function processMessageText(text) {
+            if (!text) return '';
+
+            // URL regex pattern
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            // YouTube URL patterns
+            const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/gi;
+
+            let processedText = escapeHtml(text);
+
+            // Replace URLs with clickable links
+            processedText = processedText.replace(urlRegex, (url) => {
+                const cleanUrl = url.replace(/["']/g, '');
+                return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="message-link">${cleanUrl}</a>`;
+            });
+
+            // Check for YouTube links and add previews
+            const youtubeMatches = text.match(youtubeRegex);
+            if (youtubeMatches) {
+                let embedHtml = '';
+                youtubeMatches.forEach(match => {
+                    const videoIdMatch = match.match(youtubeRegex);
+                    if (videoIdMatch && videoIdMatch[1]) {
+                        const videoId = videoIdMatch[1];
+                        embedHtml += `
+                            <div class="youtube-preview" style="margin: 10px 0; max-width: 300px;">
+                                <iframe width="100%" height="200" src="https://www.youtube.com/embed/${videoId}" 
+                                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen style="border-radius: 8px;"></iframe>
+                            </div>
+                        `;
+                    }
+                });
+                processedText += embedHtml;
+            }
+
+            return processedText;
+        }
+
         async function getUserName(userId) {
             try {
                 const userDoc = await getDoc(doc(db, "users", userId));
@@ -8298,9 +8384,34 @@
             if (!currentChatId || !currentUser) return;
 
             try {
+                // Update chat readBy
                 await updateDoc(doc(db, "chats", currentChatId), {
                     readBy: arrayUnion(currentUser.uid)
                 });
+
+                // Update individual messages readBy
+                const messagesQuery = query(
+                    collection(db, "messages"),
+                    where("chatId", "==", currentChatId),
+                    where("sender", "!=", currentUser.uid)
+                );
+
+                const messagesSnapshot = await getDocs(messagesQuery);
+                const updatePromises = [];
+
+                messagesSnapshot.forEach((docSnapshot) => {
+                    const message = docSnapshot.data();
+                    if (!message.readBy || !message.readBy.includes(currentUser.uid)) {
+                        updatePromises.push(
+                            updateDoc(doc(db, "messages", docSnapshot.id), {
+                                readBy: arrayUnion(currentUser.uid)
+                            })
+                        );
+                    }
+                });
+
+                await Promise.all(updatePromises);
+
             } catch (error) {
                 console.error('Error marking messages as read:', error);
             }
@@ -8758,6 +8869,18 @@
                 } else {
                     micButton.style.display = 'none';
                     sendButton.style.display = 'flex';
+                }
+            });
+
+            messageInput.addEventListener('paste', async (e) => {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        await handleImagePaste(file);
+                        break;
+                    }
                 }
             });
 
@@ -9506,12 +9629,20 @@
 
             window.copyMessageText = () => {
                 if (currentContextMenuMessage) {
-                    const text = currentContextMenuMessage.dataset.messageText;
-                    if (text) {
-                        navigator.clipboard.writeText(text);
-                        showToast("Copied to clipboard");
+                    const messageType = currentContextMenuMessage.dataset.type;
+                    const messageText = currentContextMenuMessage.dataset.text || '';
+                    const messageContent = currentContextMenuMessage.dataset.content || '';
+
+                    if (messageType === 'image' && messageContent) {
+                        // For images, copy the image URL
+                        navigator.clipboard.writeText(messageContent);
+                        showToast("Image URL copied to clipboard");
+                    } else if (messageText) {
+                        // For text messages, copy the text
+                        navigator.clipboard.writeText(messageText);
+                        showToast("Message copied to clipboard");
                     } else {
-                        showToast("No text to copy", "warning");
+                        showToast("No content to copy", "warning");
                     }
                 }
             };
@@ -9563,7 +9694,15 @@
                     messageToForward = {
                         text: currentContextMenuMessage.dataset.text || '',
                         type: currentContextMenuMessage.dataset.type || 'text',
-                        content: currentContextMenuMessage.dataset.content || null
+                        content: currentContextMenuMessage.dataset.content || null,
+                        fileName: currentContextMenuMessage.dataset.fileName || null,
+                        fileSize: currentContextMenuMessage.dataset.fileSize || null,
+                        fileType: currentContextMenuMessage.dataset.fileType || null,
+                        address: currentContextMenuMessage.dataset.address || null,
+                        latitude: currentContextMenuMessage.dataset.latitude || null,
+                        longitude: currentContextMenuMessage.dataset.longitude || null,
+                        duration: currentContextMenuMessage.dataset.duration || null,
+                        transferId: currentContextMenuMessage.dataset.transferId || null
                     };
 
                     forwardModal.classList.add('active');
@@ -9614,16 +9753,96 @@
                 if (!messageToForward) return;
 
                 try {
-                    await addDoc(collection(db, "messages"), {
+                    const messageData = {
                         chatId: chatId,
                         sender: currentUser.uid,
-                        text: messageToForward.text,
+                        text: messageToForward.text ? CryptoJS.AES.encrypt(messageToForward.text, "secretKey").toString() : '',
                         type: messageToForward.type,
-                        content: messageToForward.content || null,
                         timestamp: serverTimestamp(),
                         readBy: [currentUser.uid],
-                        delivered: false
-                    });
+                        delivered: false,
+                        deleted: false,
+                        deletedFor: [],
+                        reactions: {},
+                        userReactions: {},
+                        replyTo: null
+                    };
+
+                    // Add type-specific properties
+                    if (messageToForward.content) {
+                        messageData.content = messageToForward.content;
+                    }
+                    if (messageToForward.fileName) {
+                        messageData.fileName = messageToForward.fileName;
+                    }
+                    if (messageToForward.fileSize) {
+                        messageData.fileSize = parseInt(messageToForward.fileSize);
+                    }
+                    if (messageToForward.fileType) {
+                        messageData.fileType = messageToForward.fileType;
+                    }
+                    if (messageToForward.address) {
+                        messageData.address = messageToForward.address;
+                    }
+                    if (messageToForward.latitude) {
+                        messageData.latitude = parseFloat(messageToForward.latitude);
+                    }
+                    if (messageToForward.longitude) {
+                        messageData.longitude = parseFloat(messageToForward.longitude);
+                    }
+                    if (messageToForward.duration) {
+                        messageData.duration = messageToForward.duration;
+                    }
+                    if (messageToForward.transferId) {
+                        messageData.transferId = messageToForward.transferId;
+                    }
+
+                    await addDoc(collection(db, "messages"), messageData);
+
+                    // Update chat last message
+                    let lastMessageText = messageData.text;
+                    if (!lastMessageText) {
+                        switch (messageToForward.type) {
+                            case 'image':
+                                lastMessageText = '📷 Photo';
+                                break;
+                            case 'video':
+                                lastMessageText = '🎬 Video';
+                                break;
+                            case 'voice':
+                                lastMessageText = '🎵 Voice message';
+                                break;
+                            case 'document':
+                                lastMessageText = '📄 Document';
+                                break;
+                            case 'location':
+                                lastMessageText = '📍 Location';
+                                break;
+                            default:
+                                lastMessageText = `[${messageToForward.type}]`;
+                        }
+                    }
+
+                    const updateData = {
+                        lastMessage: lastMessageText,
+                        lastMessageTime: serverTimestamp(),
+                        sender: currentUser.uid
+                    };
+
+                    if (currentGroupId) {
+                        updateData.readBy = [currentUser.uid];
+                    } else {
+                        const chatDoc = await getDoc(doc(db, "chats", chatId));
+                        if (chatDoc.exists()) {
+                            const chat = chatDoc.data();
+                            const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+                            if (otherUserId) {
+                                updateData[`unreadCount.${otherUserId}`] = increment(1);
+                            }
+                        }
+                    }
+
+                    await updateDoc(doc(db, "chats", chatId), updateData);
 
                     showToast(`Message forwarded to ${name}`);
                     closeForwardModal();
