@@ -4622,7 +4622,6 @@
         let selectedGroupMembers = new Set();
 
         // Camera state
-        let currentCamera = 'user'; // 'user' for front, 'environment' for back
         let availableCameras = [];
 
         // Ringtone state
@@ -6969,9 +6968,6 @@
             }
 
             try {
-                // Stop current video tracks
-                localStream.getVideoTracks().forEach(track => track.stop());
-
                 // Get available cameras
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -6981,10 +6977,25 @@
                     return;
                 }
 
-                // Switch camera
-                currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+                // Find current camera index
+                let currentIndex = -1;
+                for (let i = 0; i < videoDevices.length; i++) {
+                    if (videoDevices[i].deviceId === localStream.getVideoTracks()[0].getSettings().deviceId) {
+                        currentIndex = i;
+                        break;
+                    }
+                }
+
+                // Switch to next camera
+                const nextIndex = (currentIndex + 1) % videoDevices.length;
+                const nextDevice = videoDevices[nextIndex];
+
+                // Stop current video tracks
+                localStream.getVideoTracks().forEach(track => track.stop());
+
+                // Get new stream with specific device
                 const constraints = {
-                    video: { facingMode: currentCamera },
+                    video: { deviceId: { exact: nextDevice.deviceId } },
                     audio: true
                 };
 
@@ -7008,12 +7019,15 @@
                 localStream.removeTrack(oldVideoTrack);
                 localStream.addTrack(newVideoTrack);
 
-                showToast(`Switched to ${currentCamera === 'user' ? 'front' : 'back'} camera`);
+                // Determine camera type for toast message
+                const facingMode = newVideoTrack.getSettings().facingMode;
+                const cameraType = facingMode === 'user' ? 'front' : 'back';
+                showToast(`Switched to ${cameraType} camera`);
 
-                // Update camera toggle icon
+                // Update camera toggle icon (rotate icon when multiple cameras available)
                 const cameraToggleIcon = document.getElementById('cameraToggleIcon');
                 if (cameraToggleIcon) {
-                    cameraToggleIcon.className = currentCamera === 'user' ? 'fas fa-camera' : 'fas fa-camera-rotate';
+                    cameraToggleIcon.className = videoDevices.length > 2 ? 'fas fa-camera-rotate' : 'fas fa-camera';
                 }
 
             } catch (error) {
