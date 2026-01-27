@@ -3976,9 +3976,12 @@
                 <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
                 <i class="fas fa-envelope input-icon"></i>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="position: relative;">
                 <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
                 <i class="fas fa-lock input-icon"></i>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility()" style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8696a0; cursor: pointer; font-size: 18px; padding: 5px; transition: all 0.3s;">
+                    <i class="fas fa-eye" id="passwordEyeIcon"></i>
+                </button>
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
                 <label for="rememberMe" class="remember-toggle">
@@ -4595,6 +4598,7 @@
         let isVideoOff = false;
         let currentCallType = null;
         let outgoingCallTimeout = null;
+        let currentCamera = 'user';
         let chatToDelete = null;
         let activeFileTransfers = new Map();
         let chatCache = new Map();
@@ -4793,6 +4797,7 @@
 
         // ====== PERFORMANCE OPTIMIZATION ======
         function startPerformanceMonitor() {
+            let fpsWarningThrottled = false;
             function updateFPS() {
                 frameCount++;
                 const currentTime = performance.now();
@@ -4802,13 +4807,19 @@
                     lastTime = currentTime;
 
                     if (fps < 30) {
-                        console.warn(`Low FPS: ${fps}`);
+                        // Only log warning once every 5 seconds to reduce console spam
+                        if (!fpsWarningThrottled) {
+                            console.warn(`Low FPS: ${fps}`);
+                            fpsWarningThrottled = true;
+                            setTimeout(() => { fpsWarningThrottled = false; }, 5000);
+                        }
                         document.body.classList.add('reduce-motion');
                     } else {
                         document.body.classList.remove('reduce-motion');
                     }
 
-                    if (performanceOverlay.style.display === 'block') {
+                    // Only update display if overlay is visible to reduce DOM manipulation
+                    if (performanceOverlay && performanceOverlay.style.display === 'block') {
                         fpsCounter.textContent = fps;
                     }
                 }
@@ -4828,6 +4839,20 @@
                 timeout = setTimeout(later, wait);
             };
         }
+
+        // Password visibility toggle
+        window.togglePasswordVisibility = () => {
+            const passwordInput = document.getElementById('loginPassword');
+            const eyeIcon = document.getElementById('passwordEyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.className = 'fas fa-eye';
+            }
+        };
 
         // ====== AUTH FUNCTIONS ======
         window.showSignup = () => {
@@ -7614,7 +7639,11 @@
                 outgoingCallTimeout = null;
             }
 
-            stopRingtone();
+            try {
+                stopRingtone();
+            } catch (e) {
+                console.log('Error stopping ringtone:', e);
+            }
             outgoingCallModal.classList.remove('active');
             incomingCallModal.classList.remove('active');
             callInterface.classList.remove('active');
@@ -7655,13 +7684,19 @@
                 callTimer = null;
             }
 
-            stopVibration();
+            try {
+                stopVibration();
+            } catch (e) {
+                console.log('Error stopping vibration:', e);
+            }
 
             isInCall = false;
             isMuted = false;
             isVideoOff = false;
             callInitiator = false;
-            currentCamera = 'user';
+            if (typeof currentCamera !== 'undefined') {
+                currentCamera = 'user';
+            }
 
             document.getElementById('muteIcon').className = 'fas fa-microphone-slash';
             document.getElementById('videoIcon').className = 'fas fa-video-slash';
@@ -8425,9 +8460,28 @@
             if (youtubeMatches) {
                 let embedHtml = '';
                 youtubeMatches.forEach(match => {
-                    const videoIdMatch = match.match(youtubeRegex);
-                    if (videoIdMatch && videoIdMatch[1]) {
-                        const videoId = videoIdMatch[1];
+                    // Extract video ID more reliably
+                    let videoId = null;
+                    
+                    // Pattern 1: youtube.com/watch?v=VIDEO_ID
+                    const watchMatch = match.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/);
+                    if (watchMatch) {
+                        videoId = watchMatch[1];
+                    }
+                    
+                    // Pattern 2: youtu.be/VIDEO_ID
+                    const shortMatch = match.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+                    if (shortMatch) {
+                        videoId = shortMatch[1];
+                    }
+                    
+                    // Pattern 3: youtube.com/embed/VIDEO_ID
+                    const embedMatch = match.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+                    if (embedMatch) {
+                        videoId = embedMatch[1];
+                    }
+                    
+                    if (videoId) {
                         embedHtml += `
                             <div class="youtube-preview" style="margin: 10px 0; max-width: 300px;">
                                 <iframe width="100%" height="200" src="https://www.youtube.com/embed/${videoId}" 
@@ -8983,6 +9037,23 @@
             } catch (error) {
                 console.error('❌ Error logging out:', error);
                 showToast('Error logging out. Please try again.', 'error');
+            }
+
+            // Show authContainer and hide appContainer
+            try {
+                authContainer.style.display = 'block';
+                appContainer.style.display = 'none';
+                
+                // Clear login form
+                const loginEmail = document.getElementById('loginEmail');
+                const loginPassword = document.getElementById('loginPassword');
+                if (loginEmail) loginEmail.value = '';
+                if (loginPassword) loginPassword.value = '';
+                
+                console.log('✅ Redirected to login page');
+            } catch (e) {
+                console.error('Redirect error:', e);
+                location.reload();
             }
         };
 
